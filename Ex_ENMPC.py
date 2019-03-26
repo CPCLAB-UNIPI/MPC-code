@@ -32,7 +32,7 @@ d = SX.sym("d", 2)  # disturbance
 ### 2) Process and Model construction 
 StateFeedback = True # Set to True if you have all the states measured 
 
-cA0 = 1.0  # kmol/m^3 ???
+cA0 = 1.0  # kmol/m^3 
 V = 1.0 # m^3 ????
 k1 = 1. # min^-1
 k2 = 0.05 # min^-1

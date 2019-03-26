@@ -62,8 +62,6 @@ QForm_ss = False # Set true if you have setpoint and you want y-y_sp and u-u_sp 
 DUssForm = False # Set true if you want DUss = u_s[k]-u_s[k-1] as optimization variables rather than u_s[k]
 
 Adaptation = False # Set true to have the modifiers-adaption method
-Adaptation_dyn = False # Set true to have the modifiers-adaption method on the dynamic problem too
-broyden = False  # Set true to calculate the plant gradient with the Broyden method
 
 ## Dynamic optimization 
 ContForm = False # Set true if you want to integrate the objective function in continuous form

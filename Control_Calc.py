@@ -43,12 +43,11 @@ def opt_dyn(xSX , uSX, ySX, dSX, tSX, n, m, p, nd, Fx_model, Fy_model, F_obj, Vf
     d = par[n+nxu:n+nxu+nd]
     um1 = par[n+nxu+nd:2*nxu+nd]
     t = par[2*nxu+nd:2*nxu+nd+1]
+    lambdayT_r = par[2*nxu+nd+1:2*nxu+nd+1+p*m]
     
-    lambdaxT_r = par[2*nxu+nd+1:2*nxu+nd+1+n*n]
-    lambdauT_r = par[2*nxu+nd+1+n*n:2*nxu+nd+1+n*n+n*m]
+    lambdayT = lambdayT_r.reshape((p,m)) #shaping lambda_r vector in order to reconstruct the matrix
     
-    lambdaxT = lambdaxT_r.reshape((n,n)) #shaping lambda_r vector in order to reconstruct the matrix
-    lambdauT = lambdauT_r.reshape((n,m)) #shaping lambda_r vector in order to reconstruct the matrix
+    
 
     # Defining bound constraint 
     if ymin is None and ymax is None:
@@ -102,23 +101,21 @@ def opt_dyn(xSX , uSX, ySX, dSX, tSX, n, m, p, nd, Fx_model, Fy_model, F_obj, Vf
     g.append(x0 - X[0]) #adding initial contraint to the current xhat_k|k   
 
     for k in range(N):
-        Y_k = Fy_model( X[k], d, t)
-        
         # Correction for dynamic KKT matching
-        Thetax_k = mtimes(lambdauT,(U[k] - us)) + mtimes(lambdaxT,(X[k] - xs)) 
-     
+        Y_k = Fy_model( X[k], d, t) + mtimes(lambdayT,(U[k] - us))
+        
         if yFree is False:
             g1.append(Y_k) #bound constraint on Y_k
 
         if ContForm is True: 
             Fk = F(x0=X[k], p=vertcat(U[k],d,t, xs, us))
-            g.append(X[k+1] - Fk['xf'] - Thetax_k)
+            g.append(X[k+1] - Fk['xf'])
 
             # Add contribution to the objective
             f_obj += Fk['qf']
 
         else:
-            X_next = Fx_model( X[k], U[k], h, d, t) + Thetax_k
+            X_next = Fx_model( X[k], U[k], h, d, t)
 
             if k == 0:
                 DU_k = U[k] - um1

@@ -546,8 +546,6 @@ for ksim in range(Nsim):
         xs_prev = xs_k #just a reminder that this must be xs_(k-1)
         
         lambdaT_k_r = DM(lambdaT_k).reshape((nu*ny,1)) #shaping lambda matrix in order to enter par_ss
-        lambdaxT_k_r = DM(lambdaxT_k).reshape((nx*nx,1)) #shaping lambda matrix in order to enter par
-        lambdauT_k_r = DM(lambdauT_k).reshape((nu*nx,1)) #shaping lambda matrix in order to enter par
         
         ## Paramenter for Target optimization
         par_ss = vertcat(usp_k,ysp_k,xsp_k,dhat_k,us_prev,lambdaT_k_r,t_k)    
@@ -580,10 +578,7 @@ for ksim in range(Nsim):
         if Adaptation is True:
             # Updating correction for modifiers-adaptation method 
             cor_k = mtimes(lambdaT_k,(us_k - us_prev))
-            Thetax_k = mtimes(lambdaxT_k,(xhat_k - xs_prev)) + mtimes(lambdauT_k,(u_k - us_prev))
             COR.append(cor_k)
-            if Adaptation_dyn is True:
-                THETAX.append(Thetax_k)
         
         
         XS.append(xs_k)
@@ -613,7 +608,7 @@ for ksim in range(Nsim):
    
             
         ## Set parameter for dynamic optimisation
-        par = vertcat(xhat_k,cur_tar,dhat_k,u_k,t_k,lambdaxT_k_r,lambdauT_k_r)
+        par = vertcat(xhat_k,cur_tar,dhat_k,u_k,t_k,lambdaT_k_r)
         
         ## Solve the OCP
         start_time = time.time()
@@ -679,11 +674,7 @@ for ksim in range(Nsim):
             lambdaT_k = LambdaT(xs_kp,xs_k,us_k,dhat_k,ys_k,h,t_k,dx_p,dy_p, lambdaT_k)
             LAMBDA.append(lambdaT_k)
             
-            if Adaptation_dyn is True:
-                lambdaxT_k = LambdaxT(xs_kp,xs_k,us_k,dhat_k,h,t_k,dx_p, lambdaxT_k)
-                lambdauT_k = LambdauT(xs_kp,xs_k,us_k,dhat_k,h,t_k,dx_p, lambdauT_k)
-            
-            
+           
         ## Process economic ptimum calculation
         if nx == nxp:
             par_ssp2 = vertcat(usp_k,ysp_k,xsp_k,dy_p,t_k,dx_p)   
