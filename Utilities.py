@@ -383,7 +383,7 @@ def defVfin(x, **Tcost):
     
     return Vfin
 
-def makeplot(tsim,X1,label,*var,**kwargs):
+def makeplot(tsim,X1,label,pf,*var,**kwargs):
     """
     SUMMARY:
     It constructs the plot where tsim is on the x-axis, X1,X2 on the y-axis, and label is the label of the y-axis 
@@ -396,7 +396,7 @@ def makeplot(tsim,X1,label,*var,**kwargs):
     + X1,X2         - y-axis vectors. X1 represent the actual value while X2 the setpoint
     + label         - label for the y-axis
     + var           - positional variables to include another vector X2 to plot together with X1
-    + label         - plot options including linestyle and changing the tefault legend values
+    + kwargs         - plot options including linestyle and changing the default legend values
     """ 
     linetype = '-' #defaul value for linetype
     lableg = 'Target' #defaul value for legend label
@@ -435,6 +435,7 @@ def makeplot(tsim,X1,label,*var,**kwargs):
             
         plt.grid(True)
         
+        plt.savefig(pf + label + str(k+1) + '.pdf', format = 'pdf', transparent = True, bbox_inches = 'tight' )
     return [Xout1, Xout2]
 
 def defLambdaT(xp,x,u,y,d,k,t,dxp,dyp, fx_model, fxp, Fy_model, Fy_p): 

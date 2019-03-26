@@ -726,20 +726,27 @@ tsim = plt.linspace(0, (Nsim-1)*h, Nsim )
 
 plt.close("all")
 
+ 
+# Defining path for saving figures 
+pf = pathfigure if 'pathfigure' in locals() else '.' 
+    
+if not os.path.exists(pf):
+    os.makedirs(pf) 
+
 if estimating is True:
-    [X_HAT, _] = makeplot(tsim,X_HAT,'State ',Xp, lableg = 'True Value') 
-    [Y_HAT, Yp] = makeplot(tsim,Y_HAT,'Output ',Yp, lableg = 'True Value')
-    [X_KF, Xp] = makeplot(tsim,X_KF,'KF State ',Xp, lableg = 'True Value')
+    [X_HAT, _] = makeplot(tsim,X_HAT,'State ',pf, Xp, lableg = 'True Value') 
+    [Y_HAT, Yp] = makeplot(tsim,Y_HAT,'Output ',pf, Yp, lableg = 'True Value')
+    [X_KF, Xp] = makeplot(tsim,X_KF,'KF State ',pf, Xp, lableg = 'True Value')
     
 else:
-    [X_HAT, XS] = makeplot(tsim,X_HAT,'State ',XS) 
-    [Xp, _] = makeplot(tsim,Xp,'Process State ') 
-    [U, US2] = makeplot(tsim,U,'Input ',US, pltopt = 'steps')
-    [Yp, YS] = makeplot(tsim,Yp,'Output ',YS)
+    [X_HAT, XS] = makeplot(tsim,X_HAT,'State ',pf, XS) 
+    [Xp, _] = makeplot(tsim,Xp,'Process State ',pf) 
+    [U, US2] = makeplot(tsim,U,'Input ',pf, US, pltopt = 'steps')
+    [Yp, YS] = makeplot(tsim,Yp,'Output ',pf,YS)
     if Adaptation is True:
         if nx == nxp:
-            [Upopt2, US] = makeplot(tsim,Upopt,'Optimal Flow VS Target ',US, pltopt = 'steps')
-        [Upopt,_] = makeplot(tsim,Upopt,'Optimal flow ', pltopt = 'steps')
-        [COR, _ ] = makeplot(tsim,COR,'Correction on Output ',) 
-        [THETAX, _ ] = makeplot(tsim,THETAX,'Correction on State ',) 
-[D_HAT, _ ] = makeplot(tsim,D_HAT,'Disturbance Estimate ')
+            [Upopt2, US] = makeplot(tsim,Upopt,'Optimal Flow VS Target ',pf, US, pltopt = 'steps')
+        [Upopt,_] = makeplot(tsim,Upopt,'Optimal flow ',pf,  pltopt = 'steps')
+        [COR, _ ] = makeplot(tsim,COR,'Correction on Output ',pf) 
+        [THETAX, _ ] = makeplot(tsim,THETAX,'Correction on State ',pf) 
+[D_HAT, _ ] = makeplot(tsim,D_HAT,'Disturbance Estimate ',pf)
