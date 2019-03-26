@@ -36,7 +36,7 @@ def opt_dyn(xSX , uSX, ySX, dSX, tSX, n, m, p, nd, Fx_model, Fy_model, F_obj, Vf
     U = [w[nxu*k+n : nxu*k + nxu] for k in range(N)]
     
     # Define parameters
-    par = MX.sym("par", n+nxu+nd+m+1+n*n+n*m)
+    par = MX.sym("par", 2*nxu+nd+1+p*m)
     x0 = par[0:n]
     xs = par[n:2*n]
     us = par[2*n:n+nxu]
