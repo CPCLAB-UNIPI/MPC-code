@@ -236,7 +236,7 @@ if estimating is False:
     #### Modifiers Adaptatation gradient definition  ############################
     if Adaptation is True: 
         (solver_ss_mod, wssp_lb, wssp_ub, gssp_lb, gssp_ub) = opt_ssp(nxp, nu, ny, nd, Fx_p,Fy_p, sol_optss, xmin = xmin, xmax = xmax, h = h)
-        (LambdaT, LambdaxT, LambdauT) = defLambdaT(xp,x,u,y,d,k,t,dxp,dyp, Fx_model, Fx_p, Fy_model, Fy_p)
+        LambdaT = defLambdaT(xp,x,u,y,d,k,t,dxp,dyp, Fx_model, Fx_p, Fy_model, Fy_p)
         
     if nx == nxp:
         (solver_ss2, wssp2_lb, wssp2_ub, gssp2_lb, gssp2_ub) = opt_ssp2(nxp, nu, ny, nd, Fx_p,Fy_p, Fss_obj, QForm_ss,sol_optss, umin = umin, umax = umax, w_s = None, z_s = None, ymin = ymin, ymax = ymax, xmin = xmin, xmax = xmax, h = h)
@@ -339,8 +339,8 @@ x_k = DM(x0_p)
 u_k = DM(u0)
 xhat_k = DM(x0_m)
 lambdaT_k = np.zeros((ny,nu))
-lambdaxT_k = np.zeros((nx,nx))
-lambdauT_k = np.zeros((nx,nu))
+#lambdaxT_k = np.zeros((nx,nx))
+#lambdauT_k = np.zeros((nx,nu))
 cor_k = 0.00*np.ones((ny,1))
 delta_k = np.zeros((nu,ny))
 try:
@@ -728,7 +728,7 @@ plt.close("all")
 
  
 # Defining path for saving figures 
-pf = pathfigure if 'pathfigure' in locals() else '.' 
+pf = pathfigure if 'pathfigure' in locals() else './' 
     
 if not os.path.exists(pf):
     os.makedirs(pf) 

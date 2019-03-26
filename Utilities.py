@@ -458,11 +458,7 @@ def defLambdaT(xp,x,u,y,d,k,t,dxp,dyp, fx_model, fxp, Fy_model, Fy_p):
     """ 
     lambdaTprev = SX.sym('lambdaTprev',(y.size1(),u.size1()))
     
-    lambdaxTprev = SX.sym('lambdaTprev',(x.size1(),x.size1()))
-    lambdauTprev = SX.sym('lambdaTprev',(x.size1(),u.size1()))
-    
     alphalss = 0.2
-    alphaldyn = 0.1
     
     Fun_in = SX.get_input(fx_model)
     Nablaxfx = jacobian(fx_model.call(Fun_in)[0], Fun_in[0])
@@ -482,20 +478,11 @@ def defLambdaT(xp,x,u,y,d,k,t,dxp,dyp, fx_model, fxp, Fy_model, Fy_p):
     
     gradydiff = gradyPlant - gradyModel
     
-    gradxdiff = Nablaxfxp - Nablaxfx
-    gradudiff = Nablaufxp - Nablaufx
-    
     lambdaT = (1-alphalss)*lambdaTprev + alphalss*gradydiff
-    
-    lambdaxT = (1-alphaldyn)*lambdaxTprev + alphaldyn*gradxdiff
-    lambdauT = (1-alphaldyn)*lambdauTprev + alphaldyn*gradudiff 
     
     LambdaT = Function('LambdaT', [xp,x,u,d,y,k,t,dxp,dyp,lambdaTprev], [lambdaT])
     
-    LambdaxT = Function('LambdaxT', [xp,x,u,d,k,t,dxp,lambdaxTprev], [lambdaxT])
-    LambdauT = Function('LambdauT', [xp,x,u,d,k,t,dxp,lambdauTprev], [lambdauT])
-    
-    return [LambdaT, LambdaxT, LambdauT]
+    return LambdaT
     
 def opt_ssp(n, m, p, nd, Fx ,Fy ,sol_opts, xmin = None, xmax = None, h = None):
     """
