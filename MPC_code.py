@@ -241,8 +241,10 @@ if estimating is False:
         # Defining the optimization problem to calculate the plant steady state given the input
         (solver_ss_mod, wssp_lb, wssp_ub, gssp_lb, gssp_ub) = opt_ssp(nxp, nu, ny, nd, Fx_p,Fy_p, sol_optss, xmin = xpmin, xmax = xpmax, h = h)
         
+        alpha_mod = 0.2 if 'alpha_mod' not in locals() else alpha_mod
+        
         # Defining modifier update filtering euqation
-        LambdaT = defLambdaT(xp,x,u,y,d,k,t,dxp,dyp, Fx_model, Fx_p, Fy_model, Fy_p)
+        LambdaT = defLambdaT(xp,x,u,y,d,k,t,dxp,dyp, Fx_model, Fx_p, Fy_model, Fy_p, alpha_mod)
         
         # Defining auxiliary variable and objective function when nx != nxp
         if nx != nxp:

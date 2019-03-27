@@ -395,8 +395,9 @@ def makeplot(tsim,X1,label,pf,*var,**kwargs):
     + tsim          - x-axis vector (time of the simulation (min))
     + X1,X2         - y-axis vectors. X1 represent the actual value while X2 the setpoint
     + label         - label for the y-axis
+    + pf            - path where the plots are saved
     + var           - positional variables to include another vector X2 to plot together with X1
-    + kwargs         - plot options including linestyle and changing the default legend values
+    + kwargs        - plot options including linestyle and changing the default legend values
     """ 
     linetype = '-' #defaul value for linetype
     lableg = 'Target' #defaul value for legend label
@@ -438,7 +439,7 @@ def makeplot(tsim,X1,label,pf,*var,**kwargs):
         plt.savefig(pf + label + str(k+1) + '.pdf', format = 'pdf', transparent = True, bbox_inches = 'tight' )
     return [Xout1, Xout2]
 
-def defLambdaT(xp,x,u,y,d,k,t,dxp,dyp, fx_model, fxp, Fy_model, Fy_p): 
+def defLambdaT(xp,x,u,y,d,k,t,dxp,dyp, fx_model, fxp, Fy_model, Fy_p, alphalss): 
     """
     SUMMARY:
     It constructs the function to evaluate the modifiers adaptation correction term
@@ -452,13 +453,12 @@ def defLambdaT(xp,x,u,y,d,k,t,dxp,dyp, fx_model, fxp, Fy_model, Fy_p):
     + fxp           - Process state function
     + Fy_model      - Model output function
     + Fy_p          - Process output function
+    + alphalss      - Filtering factor (default value = 0.2)
     
     OUTPUTS:
     + LambdaT       - Function to evaluate the modifiers correction term       
     """ 
     lambdaTprev = SX.sym('lambdaTprev',(y.size1(),u.size1()))
-    
-    alphalss = 0.2
     
     Fun_in = SX.get_input(fx_model)
     Nablaxfx = jacobian(fx_model.call(Fun_in)[0], Fun_in[0])
