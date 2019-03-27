@@ -232,14 +232,27 @@ if estimating is False:
     sol_optss = {'ipopt.max_iter':Sol_itmax, 'ipopt.hessian_constant':Sol_Hess_constss}#, 'ipopt.tol':1e-10}
     sol_optdyn = {'ipopt.max_iter':Sol_itmax, 'ipopt.hessian_constant':Sol_Hess_constdyn}#, 'ipopt.tol':1e-10} 
         
-        
     #### Modifiers Adaptatation gradient definition  ############################
     if Adaptation is True: 
-        (solver_ss_mod, wssp_lb, wssp_ub, gssp_lb, gssp_ub) = opt_ssp(nxp, nu, ny, nd, Fx_p,Fy_p, sol_optss, xmin = xmin, xmax = xmax, h = h)
+        # Defining eventual new bound contraints when nx != nxp
+        xpmin = xmin if 'xpmin' not in locals() else xpmin
+        xpmax = xmax if 'xpmin' not in locals() else xpmax
+        
+        # Defining the optimization problem to calculate the plant steady state given the input
+        (solver_ss_mod, wssp_lb, wssp_ub, gssp_lb, gssp_ub) = opt_ssp(nxp, nu, ny, nd, Fx_p,Fy_p, sol_optss, xmin = xpmin, xmax = xpmax, h = h)
+        
+        # Defining modifier update filtering euqation
         LambdaT = defLambdaT(xp,x,u,y,d,k,t,dxp,dyp, Fx_model, Fx_p, Fy_model, Fy_p)
         
-    if nx == nxp:
-        (solver_ss2, wssp2_lb, wssp2_ub, gssp2_lb, gssp2_ub) = opt_ssp2(nxp, nu, ny, nd, Fx_p,Fy_p, Fss_obj, QForm_ss,sol_optss, umin = umin, umax = umax, w_s = None, z_s = None, ymin = ymin, ymax = ymax, xmin = xmin, xmax = xmax, h = h)
+        # Defining auxiliary variable and objective function when nx != nxp
+        if nx != nxp:
+            xp2 = SX.sym("xp2", nxp)
+            Fss_obj2 = Function('Fss_obj2', [xp,u,y,xp2,usp,ysp], [User_fssobj(xp,u,y,xp2,usp,ysp)]) # The economic function has to be non-linear
+        else:
+            Fss_obj2 = Fss_obj
+    
+        # Defining the optimization problem to calculate the true plant optimum
+        (solver_ss2, wssp2_lb, wssp2_ub, gssp2_lb, gssp2_ub) = opt_ssp2(nxp, nu, ny, nd, Fx_p,Fy_p, Fss_obj2, QForm_ss,sol_optss, umin = umin, umax = umax, w_s = None, z_s = None, ymin = ymin, ymax = ymax, xmin = xpmin, xmax = xpmax, h = h)
     #############################################################################
     
     #### Solver definition  #####################################################
@@ -334,7 +347,7 @@ if mhe is True:
 #############################################################################        
 dx_p = DM.zeros(nxp,1) #Dummy variable when disturbance is not present
 dy_p = DM.zeros(ny,1) #Dummy variable when disturbance is not present
-ysp_k = DM.zeros(ny,1); usp_k = DM.zeros(nu,1); xsp_k = DM.zeros(nx,1)
+ysp_k = DM.zeros(ny,1); usp_k = DM.zeros(nu,1); xsp_k = DM.zeros(nx,1); xsp_k_p = DM.zeros(nxp,1)
 x_k = DM(x0_p)
 u_k = DM(u0)
 xhat_k = DM(x0_m)
@@ -361,9 +374,8 @@ D_HAT = []
 COR = []
 TIME_SS = []
 TIME_DYN = []
-Upopt = []
+Upopt = []; Ypopt = []
 LAMBDA = []
-THETAX = []
 P_K = []
 Esim = []
 X_KF = []
@@ -675,9 +687,8 @@ for ksim in range(Nsim):
             LAMBDA.append(lambdaT_k)
             
            
-        ## Process economic ptimum calculation
-        if nx == nxp:
-            par_ssp2 = vertcat(usp_k,ysp_k,xsp_k,dy_p,t_k,dx_p)   
+            ## Process economic optimum calculation
+            par_ssp2 = vertcat(usp_k,ysp_k,xsp_k_p,dy_p,t_k,dx_p)   
              
             wssp2_guess = DM.zeros(nxp+nu+ny)
             wssp2_guess[0:nxp] = x0_p
@@ -698,7 +709,7 @@ for ksim in range(Nsim):
             ys_kp2 = wssp2_opt[nxp+nu:nxp+nu+ny]
             fss_p2 = sol_ss2["f"]
             Upopt.append(us_kp2)    
-        
+            Ypopt.append(ys_kp2)
            
         
 Xp = vertcat(*Xp)        
@@ -717,9 +728,9 @@ if estimating is False:
     TIME_DYN = vertcat(*TIME_DYN)
     COR = vertcat(*COR)
     LAMBDA = vertcat(*LAMBDA)
-    THETAX = vertcat(*THETAX)
-    if nx == nxp:
-        Upopt = vertcat(*Upopt)    
+    Upopt = vertcat(*Upopt) 
+    Ypopt = vertcat(*Ypopt) 
+    
 
 ## Defining time for plotting
 tsim = plt.linspace(0, (Nsim-1)*h, Nsim )
@@ -739,14 +750,15 @@ if estimating is True:
     [X_KF, Xp] = makeplot(tsim,X_KF,'KF State ',pf, Xp, lableg = 'True Value')
     
 else:
+    if Adaptation is True:
+        [Upopt2, US2] = makeplot(tsim,Upopt,'Optimal Input VS Target ',pf, US, pltopt = 'steps')
+        [U2, Upopt2] = makeplot(tsim,U,'Optimal Input VS Actual ',pf, Upopt, pltopt = 'steps', lableg = 'Optimal Value')
+        [Yp2, Ypopt] = makeplot(tsim,Yp,'Optimal Output VS Actual ',pf, Ypopt, lableg = 'Optimal Value')
+        [Upopt,_] = makeplot(tsim,Upopt,'Optimal flow ',pf,  pltopt = 'steps')
+        [COR, _ ] = makeplot(tsim,COR,'Correction on Output ',pf)  
     [X_HAT, XS] = makeplot(tsim,X_HAT,'State ',pf, XS) 
     [Xp, _] = makeplot(tsim,Xp,'Process State ',pf) 
-    [U, US2] = makeplot(tsim,U,'Input ',pf, US, pltopt = 'steps')
+    [U, US] = makeplot(tsim,U,'Input ',pf, US, pltopt = 'steps')
     [Yp, YS] = makeplot(tsim,Yp,'Output ',pf,YS)
-    if Adaptation is True:
-        if nx == nxp:
-            [Upopt2, US] = makeplot(tsim,Upopt,'Optimal Flow VS Target ',pf, US, pltopt = 'steps')
-        [Upopt,_] = makeplot(tsim,Upopt,'Optimal flow ',pf,  pltopt = 'steps')
-        [COR, _ ] = makeplot(tsim,COR,'Correction on Output ',pf) 
-        [THETAX, _ ] = makeplot(tsim,THETAX,'Correction on State ',pf) 
+    
 [D_HAT, _ ] = makeplot(tsim,D_HAT,'Disturbance Estimate ',pf)
