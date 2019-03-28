@@ -72,6 +72,8 @@ QForm = False # Set true if you want x[k]-xs and u[k]-us as optimization variabl
 
 DUForm = False # Set true if you want DU = u[k]-u[k-1] as optimization variables rather than u[k]
 
+DUFormEcon = False # Set true if you want DU = u[k]-u[k-1] as optimization variables added to u[k] in economic MPC
+
 ## Solver
 Sol_itmax = 100
 Sol_Hess_constss = 'no' # Set True if you want to calculate Hessian matrices every iteration

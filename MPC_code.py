@@ -261,9 +261,9 @@ if estimating is False:
     (solver_ss, wss_lb, wss_ub, gss_lb, gss_ub) = opt_ss(nx, nu, ny, nd, Fx_model,Fy_model, Fss_obj, QForm_ss, DUssForm, sol_optss,umin = umin, umax = umax, w_s = None, z_s = None, ymin = ymin, ymax = ymax, xmin = xmin, xmax = xmax, h = h)
     
     if 'User_fobj_Cont' in locals():
-        (solver, w_lb, w_ub, g_lb, g_ub) = opt_dyn(x, u, y, d, t, nx, nu, ny, nd, Fx_model,Fy_model, F_obj,Vfin, N, QForm, DUForm, ContForm, TermCons, nw, sol_optdyn, umin = umin, umax = umax,  W = None, Z = None, ymin = ymin, ymax = ymax, xmin = xmin, xmax = xmax, Dumin = Dumin, Dumax = Dumax, h = h, fx = User_fxm_Cont, xstat = xs, ustat = us)
+        (solver, w_lb, w_ub, g_lb, g_ub) = opt_dyn(x, u, y, d, t, nx, nu, ny, nd, Fx_model,Fy_model, F_obj,Vfin, N, QForm, DUForm, DUFormEcon, ContForm, TermCons, nw, sol_optdyn, umin = umin, umax = umax,  W = None, Z = None, ymin = ymin, ymax = ymax, xmin = xmin, xmax = xmax, Dumin = Dumin, Dumax = Dumax, h = h, fx = User_fxm_Cont, xstat = xs, ustat = us)
     else:
-        (solver, w_lb, w_ub, g_lb, g_ub) = opt_dyn(x, u, y, d, t, nx, nu, ny, nd, Fx_model,Fy_model, F_obj,Vfin, N, QForm, DUForm, ContForm, TermCons, nw, sol_optdyn, umin = umin, umax = umax,  W = None, Z = None, ymin = ymin, ymax = ymax, xmin = xmin, xmax = xmax, Dumin = Dumin, Dumax = Dumax, h = h)
+        (solver, w_lb, w_ub, g_lb, g_ub) = opt_dyn(x, u, y, d, t, nx, nu, ny, nd, Fx_model,Fy_model, F_obj,Vfin, N, QForm, DUForm, DUFormEcon, ContForm, TermCons, nw, sol_optdyn, umin = umin, umax = umax,  W = None, Z = None, ymin = ymin, ymax = ymax, xmin = xmin, xmax = xmax, Dumin = Dumin, Dumax = Dumax, h = h)
     #############################################################################
 
 #### Kalman steady-state gain definition  ###################################

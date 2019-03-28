@@ -17,7 +17,7 @@ import numpy as np
 from Utilities import*
 
 
-def opt_dyn(xSX , uSX, ySX, dSX, tSX, n, m, p, nd, Fx_model, Fy_model, F_obj, Vfin, N, QForm, DUForm, ContForm, TermCons, nw, sol_opts, umin = None, umax = None,  W = None, Z = None, ymin = None, ymax = None, xmin = None, xmax = None, Dumin = None, Dumax = None, h = None, fx = None, xstat = None, ustat = None):
+def opt_dyn(xSX , uSX, ySX, dSX, tSX, n, m, p, nd, Fx_model, Fy_model, F_obj, Vfin, N, QForm, DUForm, DUFormEcon, ContForm, TermCons, nw, sol_opts, umin = None, umax = None,  W = None, Z = None, ymin = None, ymax = None, xmin = None, xmax = None, Dumin = None, Dumax = None, h = None, fx = None, xstat = None, ustat = None):
     """
     SUMMARY:
     It builds the dynamic optimization problem
@@ -136,8 +136,10 @@ def opt_dyn(xSX , uSX, ySX, dSX, tSX, n, m, p, nd, Fx_model, Fy_model, F_obj, Vf
                 dy = dy - ys
             if DUForm is True:  #Checking if the OF requires DU instead of u
                 du = DU_k
+#            if DUFormEcon is True:  #Checking if the OF requires DU instead of u
+            us_obj = DU_k if DUFormEcon is True else us
         
-            f_obj_new = F_obj( dx, du, dy, xs, us, ys)        
+            f_obj_new = F_obj( dx, du, dy, xs, us_obj, ys)        
             f_obj += f_obj_new
         
     dx = X[N] - xs
