@@ -235,8 +235,8 @@ if estimating is False:
     #### Modifiers Adaptatation gradient definition  ############################
     if Adaptation is True: 
         # Defining eventual new bound contraints when nx != nxp
-        xpmin = xmin if 'xpmin' not in locals() else xpmin
-        xpmax = xmax if 'xpmin' not in locals() else xpmax
+        if 'xpmin' not in locals(): xpmin = xmin
+        if 'xpmax' not in locals(): xpmax = xma
         
         # Defining the optimization problem to calculate the plant steady state given the input
         (solver_ss_mod, wssp_lb, wssp_ub, gssp_lb, gssp_ub) = opt_ssp(nxp, nu, ny, nd, Fx_p,Fy_p, sol_optss, xmin = xpmin, xmax = xpmax, h = h)
