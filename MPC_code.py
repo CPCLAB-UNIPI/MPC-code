@@ -647,7 +647,7 @@ for ksim in range(Nsim):
     
     ################ Updating variables xp and xhat ###########################
     if Fp_nominal is True:
-        x_k = Fx_p(x_k, u_k, h, dhat_k)
+        x_k = Fx_p(x_k, u_k, h, dhat_k, t_k)
     else: # All the other cases
         x_k = Fx_p(x_k, u_k, dx_p, t_k, h)        
         
