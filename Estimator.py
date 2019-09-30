@@ -243,7 +243,7 @@ def kalman(Fx,Fy,y_act,u_k,Q,R,P_min,xhat_min,t_k):
     C_dm = jacobian(Fy.call(Fun_in)[0], Fun_in[0]) 
     
     # predicted output: y(k|k-1) 
-    yhat = mtimes(C_dm,xhat_min) 
+    yhat = Fy(xhat_min,t_k)
     
     # filter gain
     K = (solve((mtimes(mtimes(C_dm,P_min),C_dm.T) + R).T,(mtimes(P_min,C_dm.T)).T)).T
