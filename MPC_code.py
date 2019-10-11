@@ -229,8 +229,6 @@ if estimating is False:
     #############################################################################
     
     ### Solver options ##########################################################
-    sol_optss = {'ipopt.max_iter':Sol_itmax, 'ipopt.hessian_constant':Sol_Hess_constss}#, 'ipopt.tol':1e-10}
-    sol_optdyn = {'ipopt.max_iter':Sol_itmax, 'ipopt.hessian_constant':Sol_Hess_constdyn}#, 'ipopt.tol':1e-10} 
     sol_optss = {'ipopt.max_iter':Sol_itmax, 'ipopt.hessian_constant':Sol_Hess_constss,'ipopt.print_level':0,'ipopt.sb':"yes",'print_time':0}#, 'ipopt.tol':1e-10}
     sol_optdyn = {'ipopt.max_iter':Sol_itmax, 'ipopt.hessian_constant':Sol_Hess_constdyn,'ipopt.print_level':0,'ipopt.sb':"yes",'print_time':0}#, 'ipopt.tol':1e-10} 
         
@@ -292,7 +290,7 @@ if mhe is True:
         F_obj_mhe = defF_obj_mhe(w, v, t, Q = Q_mhe, R = R_mhe)
     elif 'User_fobj_mhe' in locals():
         F_obj_mhe = defF_obj_mhe(w, v, t, f_obj = User_fobj_mhe)
-    sol_optmhe = {'ipopt.max_iter':Sol_itmax, 'ipopt.hessian_constant':Sol_Hess_constmhe, 'ipopt.tol':1e-10} 
+    sol_optmhe = {'ipopt.max_iter':Sol_itmax, 'ipopt.hessian_constant':Sol_Hess_constmhe, 'ipopt.tol':1e-10,'ipopt.print_level':0,'ipopt.sb':"yes",'print_time':0} 
 
     
     ## Building state dynamics for MHE (modified with w variable)
@@ -383,6 +381,7 @@ LAMBDA = []
 P_K = []
 Esim = []
 X_KF = []
+Ysp = []
 
 for ksim in range(Nsim):
     print('Time Iteration ' + str(ksim+1) + ' of ' + str(Nsim))
@@ -553,6 +552,7 @@ for ksim in range(Nsim):
         if 'defSP' in locals():
             ## Setpoint updating    
             [ysp_k, usp_k, xsp_k] = defSP(t_k)
+            Ysp.append(ysp_k)
         
         if (ksim==0):
             us_k = u_k
@@ -735,7 +735,6 @@ if estimating is False:
     LAMBDA = vertcat(*LAMBDA)
     Upopt = vertcat(*Upopt) 
     Ypopt = vertcat(*Ypopt) 
-    
 
 ## Defining time for plotting
 tsim = plt.linspace(0, (Nsim-1)*h, Nsim )
@@ -750,20 +749,24 @@ if not os.path.exists(pf):
     os.makedirs(pf) 
 
 if estimating is True:
-    [X_HAT, _] = makeplot(tsim,X_HAT,'State ',pf, Xp, lableg = 'True Value') 
-    [Y_HAT, Yp] = makeplot(tsim,Y_HAT,'Output ',pf, Yp, lableg = 'True Value')
-    [X_KF, Xp] = makeplot(tsim,X_KF,'KF State ',pf, Xp, lableg = 'True Value')
+    [X_HAT, _, _] = makeplot(tsim,X_HAT,'State ',pf, Xp, lableg = 'True Value') 
+    [Y_HAT, Yp, _] = makeplot(tsim,Y_HAT,'Output ',pf, Yp, lableg = 'True Value')
+    [X_KF, Xp, _] = makeplot(tsim,X_KF,'KF State ',pf, Xp, lableg = 'True Value')
     
 else:
     if Adaptation is True:
-        [Upopt2, US2] = makeplot(tsim,Upopt,'Optimal Input VS Target ',pf, US, pltopt = 'steps')
-        [U2, Upopt2] = makeplot(tsim,U,'Optimal Input VS Actual ',pf, Upopt, pltopt = 'steps', lableg = 'Optimal Value')
-        [Yp2, Ypopt] = makeplot(tsim,Yp,'Optimal Output VS Actual ',pf, Ypopt, lableg = 'Optimal Value')
-        [Upopt,_] = makeplot(tsim,Upopt,'Optimal flow ',pf,  pltopt = 'steps')
-        [COR, _ ] = makeplot(tsim,COR,'Correction on Output ',pf)  
-    [X_HAT, XS] = makeplot(tsim,X_HAT,'State ',pf, XS) 
-    [Xp, _] = makeplot(tsim,Xp,'Process State ',pf) 
-    [U, US] = makeplot(tsim,U,'Input ',pf, US, pltopt = 'steps')
-    [Yp, YS] = makeplot(tsim,Yp,'Output ',pf,YS)
+        [Upopt2, US2, _] = makeplot(tsim,Upopt,'Optimal Input VS Target ',pf, US, pltopt = 'steps')
+        [U2, Upopt2, _] = makeplot(tsim,U,'Optimal Input VS Actual ',pf, Upopt, pltopt = 'steps', lableg = 'Optimal Value')
+        [Yp2, Ypopt, _] = makeplot(tsim,Yp,'Optimal Output VS Actual ',pf, Ypopt, lableg = 'Optimal Value')
+        [Upopt,_, _] = makeplot(tsim,Upopt,'Optimal flow ',pf,  pltopt = 'steps')
+        [COR, _, _] = makeplot(tsim,COR,'Correction on Output ',pf)  
+    [X_HAT, XS, _] = makeplot(tsim,X_HAT,'State ',pf, XS) 
+    [Xp, _, _] = makeplot(tsim,Xp,'Process State ',pf) 
+    [U, US, _] = makeplot(tsim,U,'Input ',pf, US, pltopt = 'steps')
+    if 'defSP' in locals():
+        Ysp = vertcat(*Ysp)
+        [Yp, YS, Ysp] = makeplot(tsim,Yp,'Output ',pf,YS,Ysp)
+    else:
+        [Yp, YS, _] = makeplot(tsim,Yp,'Output ',pf,YS)
     
-[D_HAT, _ ] = makeplot(tsim,D_HAT,'Disturbance Estimate ',pf)
+[D_HAT, _, _ ] = makeplot(tsim,D_HAT,'Disturbance Estimate ',pf)
