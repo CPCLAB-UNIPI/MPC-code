@@ -383,22 +383,27 @@ def defVfin(x, **Tcost):
     
     return Vfin
 
-def makeplot(tsim,X1,label,pf,*var,**kwargs):
+def makeplot(tsim,X1,label,pf,*var,**kwargs): 
     """
     SUMMARY:
-    It constructs the plot where tsim is on the x-axis, X1,X2 on the y-axis, and label is the label of the y-axis 
+    It constructs the plot where tsim is on the x-axis, 
+    X1,X2,X3 on the y-axis, and label is the label of the y-axis 
     
     SYNTAX:
-    makeplot(tsim,X1,X2,label,*var,**kwargs):
+    makeplot(tsim,X1,label,*var):
   
     ARGUMENTS:
     + tsim          - x-axis vector (time of the simulation (min))
-    + X1,X2         - y-axis vectors. X1 represent the actual value while X2 the setpoint
+    + X1,X2,X3      - y-axis vectors.
+    X1 represent the actual value
+    X2 the target (eventual)
+    X3 the setpoint (eventual)
     + label         - label for the y-axis
     + pf            - path where the plots are saved
-    + var           - positional variables to include another vector X2 to plot together with X1
+    + var           - positional variables to include another vector/s X2 and X3 to plot together with X1
     + kwargs        - plot options including linestyle and changing the default legend values
     """ 
+
     linetype = '-' #defaul value for linetype
     lableg = 'Target' #defaul value for legend label
     for kwkey in kwargs:    
@@ -406,38 +411,47 @@ def makeplot(tsim,X1,label,pf,*var,**kwargs):
             linetype = kwargs['pltopt']
         if kwkey == 'lableg':
             lableg = kwargs['lableg']
-
-    nt = tsim.size
+            
+    nt = int(tsim.size)
     
     X1 = np.array(X1)
     
     sz = old_div(X1.size,nt)
     Xout1 = np.zeros((nt,sz))
-    Xout2 = np.zeros((nt,sz)) 
+    Xout2 = np.zeros((nt,sz))
+    Xout3 = np.zeros((nt,sz))
     
     for k in range(sz):
         x1 = X1[k::sz]
         
         plt.figure()
-        plt.plot(tsim, x1, ls = linetype)
-        plt.xlabel('Time (min)')
+        plt.plot(tsim, x1)
+        plt.xlabel('Time ')
         plt.ylabel(label + str(k+1))
         plt.gca().set_xlim(left=0,right=tsim[-1])
-        Xout1[:,k]=np.reshape(x1,(nt,))
         
-        if len(var) > 0:
-            key = var[0]
-            X2 = np.array(key)
-            x2 = X2[k::sz]    
-            plt.plot(tsim, x2, ls = linetype)
-            plt.legend(('Actual', lableg))
-            plt.gca().set_xlim(left=0,right=tsim[-1])
-            Xout2[:,k]=np.reshape(x2,(nt,))
-            
+        Xout1[:,k] = np.reshape(x1,(nt,))
+        
+        for i_var in range(len(var)):
+            # extract dimension of var
+            var_i = var[i_var]
+            Xi = np.array(var_i)
+            xi = Xi[k::sz]
+            plt.plot(tsim, xi, ls = linetype)
+            if i_var == 0:
+                plt.legend(('Actual', lableg))
+                plt.gca().set_xlim(left=0,right=tsim[-1])
+                Xout2[:,k] = np.reshape(xi,(nt,))
+            elif i_var == 1:
+                plt.legend(('Actual', 'Target', 'Set-Point'))
+                plt.gca().set_xlim(left=0,right=tsim[-1])
+                Xout3[:,k] = np.reshape(xi,(nt,))
+                     
         plt.grid(True)
-        
+       
         plt.savefig(pf + label + str(k+1) + '.pdf', format = 'pdf', transparent = True, bbox_inches = 'tight' )
-    return [Xout1, Xout2]
+        
+    return [Xout1, Xout2, Xout3]
 
 def defLambdaT(xp,x,u,y,d,k,t,dxp,dyp, fx_model, fxp, Fy_model, Fy_p, alphalss): 
     """
