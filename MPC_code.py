@@ -231,6 +231,8 @@ if estimating is False:
     ### Solver options ##########################################################
     sol_optss = {'ipopt.max_iter':Sol_itmax, 'ipopt.hessian_constant':Sol_Hess_constss}#, 'ipopt.tol':1e-10}
     sol_optdyn = {'ipopt.max_iter':Sol_itmax, 'ipopt.hessian_constant':Sol_Hess_constdyn}#, 'ipopt.tol':1e-10} 
+    sol_optss = {'ipopt.max_iter':Sol_itmax, 'ipopt.hessian_constant':Sol_Hess_constss,'ipopt.print_level':0,'ipopt.sb':"yes",'print_time':0}#, 'ipopt.tol':1e-10}
+    sol_optdyn = {'ipopt.max_iter':Sol_itmax, 'ipopt.hessian_constant':Sol_Hess_constdyn,'ipopt.print_level':0,'ipopt.sb':"yes",'print_time':0}#, 'ipopt.tol':1e-10} 
         
     #### Modifiers Adaptatation gradient definition  ############################
     if Adaptation is True: 
@@ -383,6 +385,7 @@ Esim = []
 X_KF = []
 
 for ksim in range(Nsim):
+    print('Time Iteration ' + str(ksim+1) + ' of ' + str(Nsim))
     t_k = ksim*h #real time updating 
     
     # Updating process disturbances for the linear case
