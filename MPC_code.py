@@ -268,10 +268,31 @@ if estimating is False:
 
 #### Kalman steady-state gain definition  ###################################
 if kalss is True: 
-    if offree == "lin":
-        K = Kkalss(Fx_model, Fy_model, x, u, k, d, t, h, x_ss, u_ss, ny, nd, nx, Q_kf, R_kf, offree, Bd = Bd, Cd = Cd)
+    if 'A' in locals() and 'C' in locals():
+        linmod = 'full'    
+        if offree == "lin":
+            K = Kkalss(ny, nd, nx, Q_kf, R_kf, offree, linmod, Bd = Bd, Cd = Cd, A = A, C = C)
+        else:
+            K = Kkalss(ny, nd, nx, Q_kf, R_kf, offree, linmod, A = A, C = C)
+    elif 'A' in locals():
+        linmod = 'onlyA' 
+        if offree == "lin":
+            K = Kkalss(ny, nd, nx, Q_kf, R_kf, offree, linmod, x, u, k, d, t, h, x_ss, u_ss, Bd = Bd, Cd = Cd, A = A, Fy = Fy_model)
+        else:
+            K = Kkalss(ny, nd, nx, Q_kf, R_kf, offree, linmod, x, u, k, d, t, h, x_ss, u_ss, A = A, Fy = Fy_model)
+    elif 'C' in locals():
+        linmod = 'onlyC' 
+        if offree == "lin":
+            K = Kkalss(ny, nd, nx, Q_kf, R_kf, offree, linmod, x, u, k, d, t, h, x_ss, u_ss, Bd = Bd, Cd = Cd, C = C, Fx = Fx_model)
+        else:
+            K = Kkalss(ny, nd, nx, Q_kf, R_kf, offree, linmod, x, u, k, d, t, h, x_ss, u_ss, C = C, Fx = Fx_model)
     else:
-        K = Kkalss(Fx_model, Fy_model, x, u, k, d, t, h, x_ss, u_ss, ny, nd, nx, Q_kf, R_kf, offree)
+        linmod = 'no' 
+        if offree == "lin":
+            K = Kkalss(ny, nd, nx, Q_kf, R_kf, offree, linmod, x, u, k, d, t, h, x_ss, u_ss, Bd = Bd, Cd = Cd, Fx = Fx_model, Fy = Fy_model)
+        else:
+            K = Kkalss(ny, nd, nx, Q_kf, R_kf, offree, linmod, x, u, k, d, t, h, x_ss, u_ss, Fx = Fx_model, Fy = Fy_model)
+
 #############################################################################
 
 #### MHE optimization problem definition  ###################################

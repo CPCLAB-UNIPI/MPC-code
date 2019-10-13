@@ -96,47 +96,83 @@ def defEstimator(Fx,Fy,y_k,u_k, estype,xhat_min, t_k, **kwargsin):
                      "pO_mhe" : pO, "pPyx_mhe" : pPyx, "xm_kal_mhe" : xm_kal,"xc_kal_mhe" : xc_kal}
     return [xhat_corr, kwargsout]
 
-def Kkalss(Fx_model, Fy_model, x, u, k, d, t, h, x_ss, u_ss, ny, nd, nx, Q_kf, R_kf, offree, **dis_mat):
+def Kkalss(ny, nd, nx, Q_kf, R_kf, offree, linmod, *var, **kwargs):
     """
     SUMMARY:
     Discrete-time steady-state Kalman filter gain calculation for the given
     linear system in state space form.
     
     SYNTAX:
-    assignment = kalman(Fx_model,Fy_model,ny,nd,nx,Q_kf,R_kf,offree,**dis_mat)
+    assignment = kalman(ny, nd, nx, Q_kf, R_kf, offree, linmod, *var, **kwargs)
   
     ARGUMENTS:
-    + Fx_model - State correlation function  
-    + Fy_model - Output correlation function 
     + nx, ny , nd  - State, output and disturbance dimensions
     + Q_kf - Process noise covariance matrix
     + R_kf - Measurements noise covariance matrix
     + offree - Offset free tag
-    + dis_mat - Disturbance matrices
+    + linmod - Lineaity of the model tag
+    + var - Positional variables
+    + kwargs - Model and Disturbance matrices
        
     OUTPUTS:
     + Kaug  - Steady-state Kalman filter gain 
     """    
+    if linmod == 'onlyA' or linmod == 'full':
+        A = kwargs['A']
     
-    # get the system matrices
-    Fun_in = SX.get_input(Fx_model)
-    Adummy = jacobian(Fx_model.call(Fun_in)[0], Fun_in[0])    
-    Fun_in = SX.get_input(Fy_model)
-    Cdummy = jacobian(Fy_model.call(Fun_in)[0], Fun_in[0]) 
-    
-    d_ss = DM.zeros(nd)
-    if offree == 'nl':
-        xnew = vertcat(x,d)
-        x_ss_p = vertcat(x_ss,d_ss)
-    else:
-        xnew = x
-        x_ss_p = x_ss
+    if linmod == 'onlyC' or linmod == 'full':
+        C = kwargs['C']
+     
+    try:
+        A
+    except NameError:
+        Fx_model = kwargs['Fx']
+        x = var[0]
+        u = var[1]
+        k = var[2]
+        d = var[3]
+        t = var[4]
+        h = var[5]
+        x_ss = var[6]
+        u_ss= var[7]
         
-    A_dm = Function('A_dm', [xnew,u,k,t], [Adummy])
-    C_dm = Function('C_dm', [x,u,d,t], [Cdummy])
-    
-    A = A_dm(x_ss_p, u_ss, h, 0)
-    C = C_dm(x_ss, u_ss, d_ss, 0.0)
+         # get the system matrices
+        Fun_in = SX.get_input(Fx_model)
+        Adummy = jacobian(Fx_model.call(Fun_in)[0], Fun_in[0])    
+        
+        d_ss = DM.zeros(nd)
+        if offree == 'nl':
+            xnew = vertcat(x,d)
+            x_ss_p = vertcat(x_ss,d_ss)
+        else:
+            xnew = x
+            x_ss_p = x_ss
+            
+        A_dm = Function('A_dm', [xnew,u,k,t], [Adummy])
+        
+        A = A_dm(x_ss_p, u_ss, h, 0)
+        
+    try:
+        C
+    except NameError:
+        Fy_model = kwargs['Fy']
+        Fun_in = SX.get_input(Fy_model)
+        Cdummy = jacobian(Fy_model.call(Fun_in)[0], Fun_in[0]) 
+        
+        if 'Fx_model' not in locals:
+            x = var[0]
+            u = var[1]
+            k = var[2]
+            d = var[3]
+            t = var[4]
+            h = var[5]
+            x_ss = var[6]
+            u_ss= var[7]
+        
+        C_dm = Function('C_dm', [x,u,d,t], [Cdummy])
+        
+        C = C_dm(x_ss, u_ss, d_ss, 0.0)
+
     
     Aaug = DM.eye(nx+nd)
     Caug = DM.zeros(ny, nx+nd)
@@ -156,8 +192,8 @@ def Kkalss(Fx_model, Fy_model, x, u, k, d, t, h, x_ss, u_ss, ny, nd, nx, Q_kf, R
         Caug[0:ny,0:nx] = C
     
     if offree == "lin":
-        Bd = dis_mat["Bd"]
-        Cd = dis_mat["Cd"]
+        Bd = kwargs["Bd"]
+        Cd = kwargs["Cd"]
         
         Aaug[0:nx,nx:nx+nd] = Bd
         Caug[0:ny,nx:nx+nd] = Cd
