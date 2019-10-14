@@ -344,7 +344,7 @@ def defF_obj(x, u, y, xs, us, ys, **kwargs):
 
     return F_obj 
     
-def defVfin(x, **Tcost): 
+def defVfin(x,xs, **Tcost): 
     """
     SUMMARY:
     It constructs the terminal cost for the dynamic optimisation objective function
@@ -377,9 +377,9 @@ def defVfin(x, **Tcost):
                 break
             elif key == 'vfin_F':
                 vfin_F = Tcost['vfin_F']
-                vfin = vfin_F(x)
+                vfin = vfin_F(x,xs)
                 break
-    Vfin = Function('Vfin', [x], [vfin])
+    Vfin = Function('Vfin', [x,xs], [vfin])
     
     return Vfin
 

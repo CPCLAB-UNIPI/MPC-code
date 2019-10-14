@@ -217,15 +217,15 @@ if estimating is False:
         F_obj = defF_obj(x, u, y, xs, us, ys, f_Dis = User_fobj_Dis)
     
     if 'User_vfin' in locals():
-        Vfin = defVfin(x, vfin_F = User_vfin)
+        Vfin = defVfin(x, xs, vfin_F = User_vfin)
     elif 'A' in locals():    # Linear system
         if 'Q' in locals():      # QP problem
             #Checking S and R matrix for Riccati Equation
             if 'S' in locals():
                 R = S
-            Vfin = defVfin(x, A = A, B = B, Q = Q, R = R)
+            Vfin = defVfin(x, xs, A = A, B = B, Q = Q, R = R)
     else:
-        Vfin = defVfin(x)
+        Vfin = defVfin(x, xs)
     #############################################################################
     
     ### Solver options ##########################################################

@@ -403,7 +403,7 @@ Q = np.array([[1e3, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 1e3, 0.0, 0.0, 0.0, 0.0], \
 S = np.array([[10., 0.0], [0.0, 10.0]])                                          # DeltaU matrix
 
 # Terminal weight
-def User_vfin(x):
+def User_vfin(x,xs):
     """
     SUMMARY:
     It constructs the terminal weight for the dynamic optimization problem 

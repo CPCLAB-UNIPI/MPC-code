@@ -233,7 +233,7 @@ def User_fobj_Cont(x,u,y,xs,us,ys):
     return obj
 
 # Terminal weight
-def User_vfin(x):
+def User_vfin(x,xs):
     """
     SUMMARY:
     It constructs the terminal weight for the dynamic optimization problem 
@@ -247,7 +247,8 @@ def User_vfin(x):
     OUTPUTS:
     + vfin          - Terminal weight     
     """ 
-    vfin = mtimes(x.T,mtimes(2000,x)) 
+    diffx = x - xs 
+    vfin = mtimes(diffx.T,mtimes(2000,diffx)) 
     return vfin
 
 # Options

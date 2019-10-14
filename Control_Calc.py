@@ -142,7 +142,7 @@ def opt_dyn(xSX , uSX, ySX, dSX, tSX, n, m, p, nd, Fx_model, Fy_model, F_obj, Vf
             f_obj_new = F_obj( dx, du, dy, xs, us_obj, ys)        
             f_obj += f_obj_new
         
-    dx = X[N] - xs
+    dx = X[N]
     if QForm is True:   #Checking if the OF is quadratic
         dx = dx - xs
     if TermCons is True: #Adding the terminal constraint
@@ -152,7 +152,7 @@ def opt_dyn(xSX , uSX, ySX, dSX, tSX, n, m, p, nd, Fx_model, Fy_model, F_obj, Vf
     g1 = vertcat(*g1) #bound constraint on Y_k
     g2 = vertcat(*g2) #bound constraint on Du_k
     
-    vfin = Vfin(dx)
+    vfin = Vfin(dx,xs)
     f_obj += vfin #adding the final weight
     
     #Defining bound constraint
