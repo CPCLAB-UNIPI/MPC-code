@@ -22,7 +22,7 @@ from Estimator import *
 from Control_Calc import *
 from Default_Values import *
 
-ex_name = __import__('Ex_LMPC_demo') # Insert here your file name
+ex_name = __import__('Ex_ENMPC') # Insert here your file name
 import sys
 sys.modules['ex_name'] = ex_name
 from ex_name import * #Loading example
