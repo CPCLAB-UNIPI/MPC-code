@@ -425,7 +425,10 @@ def makeplot(tsim,X1,label,pf,*var,**kwargs):
         x1 = X1[k::sz]
         
         plt.figure()
-        plt.plot(tsim, x1)
+        try:
+            plt.plot(tsim, x1, ls = linetype)
+        except ValueError:
+            plt.step(tsim,x1)
         plt.xlabel('Time ')
         plt.ylabel(label + str(k+1))
         plt.gca().set_xlim(left=0,right=tsim[-1])
@@ -437,7 +440,10 @@ def makeplot(tsim,X1,label,pf,*var,**kwargs):
             var_i = var[i_var]
             Xi = np.array(var_i)
             xi = Xi[k::sz]
-            plt.plot(tsim, xi, ls = linetype)
+            try:
+                plt.plot(tsim, xi, ls = linetype)
+            except ValueError:
+                plt.step(tsim,xi)
             if i_var == 0:
                 plt.legend(('Actual', lableg))
                 plt.gca().set_xlim(left=0,right=tsim[-1])
