@@ -17,7 +17,7 @@ import numpy as np
 from Utilities import*
 
 
-def opt_dyn(xSX , uSX, ySX, dSX, tSX, n, m, p, nd, Fx_model, Fy_model, F_obj, Vfin, N, QForm, DUForm, DUFormEcon, ContForm, TermCons, nw, sol_opts, umin = None, umax = None,  W = None, Z = None, ymin = None, ymax = None, xmin = None, xmax = None, Dumin = None, Dumax = None, h = None, fx = None, xstat = None, ustat = None):
+def opt_dyn(xSX , uSX, ySX, dSX, tSX, dxmSX, dymSX, n, m, p, nd, Fx_model, Fy_model, F_obj, Vfin, N, QForm, DUForm, DUFormEcon, ContForm, TermCons, nw, sol_opts, umin = None, umax = None,  W = None, Z = None, ymin = None, ymax = None, xmin = None, xmax = None, Dumin = None, Dumax = None, h = None, fx = None, xstat = None, ustat = None):
     """
     SUMMARY:
     It builds the dynamic optimization problem
@@ -36,7 +36,7 @@ def opt_dyn(xSX , uSX, ySX, dSX, tSX, n, m, p, nd, Fx_model, Fy_model, F_obj, Vf
     U = [w[nxu*k+n : nxu*k + nxu] for k in range(N)]
     
     # Define parameters
-    par = MX.sym("par", 2*nxu+nd+1+p*m)
+    par = MX.sym("par", 2*nxu+nd+1+p*m+p+n)
     x0 = par[0:n]
     xs = par[n:2*n]
     us = par[2*n:n+nxu]
@@ -44,6 +44,8 @@ def opt_dyn(xSX , uSX, ySX, dSX, tSX, n, m, p, nd, Fx_model, Fy_model, F_obj, Vf
     um1 = par[n+nxu+nd:2*nxu+nd]
     t = par[2*nxu+nd:2*nxu+nd+1]
     lambdayT_r = par[2*nxu+nd+1:2*nxu+nd+1+p*m]
+    dxm = par[2*nxu+nd+1+p*m:2*nxu+nd+1+p*m+n]
+    dym = par[2*nxu+nd+1+p*m+n:2*nxu+nd+1+p*m+n+p]
     
     lambdayT = lambdayT_r.reshape((p,m)) #shaping lambda_r vector in order to reconstruct the matrix
     
@@ -79,13 +81,13 @@ def opt_dyn(xSX , uSX, ySX, dSX, tSX, n, m, p, nd, Fx_model, Fy_model, F_obj, Vf
         h = .1 #Defining integrating step if not provided from the user
     
     if ContForm is True:
-        xdot = fx(xSX,uSX,dSX,tSX)
-        y = Fy_model( xSX, dSX, tSX) 
-        ystat = Fy_model( xstat, dSX, tSX)
+        xdot = fx(xSX,uSX,dSX,tSX) + dxmSX
+        y = Fy_model( xSX, dSX, tSX, dymSX) 
+        ystat = Fy_model( xstat, dSX, tSX, dymSX)
         F_obj1 = F_obj(xSX, uSX, y, xstat, ustat, ystat)
         
         # Create an integrator
-        dae = {'x':xSX, 'p':vertcat(uSX,dSX,tSX,xstat,ustat), 'ode':xdot, 'quad':F_obj1}
+        dae = {'x':xSX, 'p':vertcat(uSX,dSX,tSX,xstat,ustat,dxmSX,dymSX), 'ode':xdot, 'quad':F_obj1}
         opts = {'tf':h, 't0':0.0} # final time
         F = integrator('F', 'idas', dae, opts)
     
@@ -96,26 +98,26 @@ def opt_dyn(xSX , uSX, ySX, dSX, tSX, n, m, p, nd, Fx_model, Fy_model, F_obj, Vf
     f_obj = 0.0;
     
 
-    ys = Fy_model( xs, d, t) #Calculating steady-state output if necessary
+    ys = Fy_model( xs, d, t, dym) #Calculating steady-state output if necessary
     
     g.append(x0 - X[0]) #adding initial contraint to the current xhat_k|k   
 
     for k in range(N):
         # Correction for dynamic KKT matching
-        Y_k = Fy_model( X[k], d, t) + mtimes(lambdayT,(U[k] - us))
+        Y_k = Fy_model( X[k], d, t, dym) + mtimes(lambdayT,(U[k] - us))
         
         if yFree is False:
             g1.append(Y_k) #bound constraint on Y_k
 
         if ContForm is True: 
-            Fk = F(x0=X[k], p=vertcat(U[k],d,t, xs, us))
+            Fk = F(x0=X[k], p=vertcat(U[k],d,t, xs, us, dxm, dym))
             g.append(X[k+1] - Fk['xf'])
 
             # Add contribution to the objective
             f_obj += Fk['qf']
 
         else:
-            X_next = Fx_model( X[k], U[k], h, d, t)
+            X_next = Fx_model( X[k], U[k], h, d, t, dxm)
 
             if k == 0:
                 DU_k = U[k] - um1

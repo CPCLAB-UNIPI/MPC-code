@@ -18,7 +18,7 @@ import math
 import scipy.linalg as scla
 import numpy as np
 
-def defF_p(x, u, y, k, t, dx, dy, **plant):
+def defF_p(x, u, y, k, t, dx, dy, dxm, dym, **plant):
     """
     SUMMARY:
     Starting from system matrix or equation builds the system model
@@ -43,15 +43,15 @@ def defF_p(x, u, y, k, t, dx, dy, **plant):
         if key == 'Ap':    # Linear model 
             Ap = plant['Ap']
             Bp = plant['Bp']
-            fx_p = (mtimes(Ap,x) + mtimes(Bp,u)) + dx
-            Fx_p = Function('Fx_p', [x,u,dx,t,k], [fx_p])
+            fx_p = (mtimes(Ap,x) + mtimes(Bp,u)) + dx + dxm
+            Fx_p = Function('Fx_p', [x,u,dx,t,k,dxm], [fx_p])
         
-        elif key == 'Fx':
+        elif key == 'Fx': # NON-Linear Discrete-Time
             Fx_p = plant['Fx']
-            dummyF = Fx_p(x,t,u) + dx
-            Fx_p = Function('Fx_p', [x,u,dx,t,k], [dummyF])
+            dummyF = Fx_p(x,t,u) + dx + dxm
+            Fx_p = Function('Fx_p', [x,u,dx,t,k,dxm], [dummyF])
         
-        elif key == 'fx':
+        elif key == 'fx': # NON-Linear Continuous-Time
                 deffxp = plant['fx']
                 Mx = plant['Mx']
                 dummyF = deffxp(x,t,u)
@@ -70,26 +70,27 @@ def defF_p(x, u, y, k, t, dx, dy, **plant):
                 
                 # Adding disturbance dx linearly
                 Dx = Function('Dx', [dx], [dx])
-                dummyF = vertcat(Fx_p(x,u,t,k)) + vertcat(Dx(dx))
-                Fx_p = Function('Fx_p', [x,u,dx,t,k], [dummyF])
+                Dxm = Function('Dxm', [dxm], [dxm])
+                dummyF = vertcat(Fx_p(x,u,t,k)) + vertcat(Dx(dx))+ vertcat(Dxm(dxm))
+                Fx_p = Function('Fx_p', [x,u,dx,t,k,dxm], [dummyF])
         
         if key == 'SF':
             fy_p = x
-            Fy_p = Function('Fy_p', [x,dy,t], [fy_p])
+            Fy_p = Function('Fy_p', [x,dy,t,dym], [fy_p])
         else:
             if key == 'Cp':    # Linear model
                 Cp = plant['Cp']
-                fy_p = mtimes(Cp,x) + dy
-                Fy_p = Function('Fy_p', [x,dy,t], [fy_p])
+                fy_p = mtimes(Cp,x) + dy + dym
+                Fy_p = Function('Fy_p', [x,dy,t,dym], [fy_p])
                 
-            elif key == 'fy':
+            elif key == 'fy':   # NON-Linear model
                 deffyp = plant['fy']
-                dummyF = deffyp(x,t) + dy
-                Fy_p = Function('Fy_p', [x,dy,t], [dummyF])
+                dummyF = deffyp(x,t) + dy + dym
+                Fy_p = Function('Fy_p', [x,dy,t,dym], [dummyF])
     
     return [Fx_p,Fy_p]
     
-def defF_model(x, u, y, d, k, t, offree, **model): 
+def defF_model(x, u, y, d, k, t, dxm, dym, offree, **model): 
     """
     SUMMARY:
     Starting from system matrix or equation builds the system model
@@ -137,7 +138,10 @@ def defF_model(x, u, y, d, k, t, offree, **model):
             if offree == "lin":
                 fx_model = fx_model + mtimes(Bd,d)
             
-            Fx_model = Function('Fx_model',[x,u,k,d,t], [fx_model])
+            # Adding measurable disturbance dx linearly
+            fx_model = fx_model + dxm
+            
+            Fx_model = Function('Fx_model',[x,u,k,d,t,dxm], [fx_model])
                 
         elif key == 'fx':   # NON-Linear continuous model 
             fx = model['fx']
@@ -160,6 +164,11 @@ def defF_model(x, u, y, d, k, t, offree, **model):
                 Dx = Function('Dx', [d], [mtimes(Bd,d)])
                 dummyF = vertcat(Fx_model(x,u,k,d,t)) + vertcat(Dx(d))
                 Fx_model = Function('Fx_model', [x,u,k,d,t], [dummyF])
+            
+            # Adding measurable disturbance dx linearly
+            Dx = Function('Dx', [dxm], [dxm])
+            dummyF = vertcat(Fx_model(x,u,k,d,t)) + vertcat(Dx(dxm))
+            Fx_model = Function('Fx_model', [x,u,k,d,t,dxm], [dummyF])
         
         elif key == 'Fx':   # NON-linear discrete model
             Fx_model = model['Fx']
@@ -167,8 +176,11 @@ def defF_model(x, u, y, d, k, t, offree, **model):
             
             if offree == "lin":
                 dummyF = dummyF + mtimes(Bd,d)
+            
+            # Adding linearly measurable disturbance dx
+            dummyF = dummyF + dxm
                 
-            Fx_model = Function('Fx_model', [x,u,k,d,t], [dummyF])
+            Fx_model = Function('Fx_model', [x,u,k,d,t,dxm], [dummyF])
             
                 
         if key == 'SF':
@@ -209,8 +221,10 @@ def defF_model(x, u, y, d, k, t, offree, **model):
                 if offree == "lin":
                     fy_model = fy_model + mtimes(Cd,d) 
                 
-                
-    Fy_model = Function('Fy_model', [x,d,t], [fy_model])
+    # Adding linearly measurable disturbance dy 
+    fy_model = fy_model + dym   
+       
+    Fy_model = Function('Fy_model', [x,d,t,dym], [fy_model])
     return [Fx_model,Fy_model]
 
 def xQx(x,Q):
@@ -459,7 +473,7 @@ def makeplot(tsim,X1,label,pf,*var,**kwargs):
         
     return [Xout1, Xout2, Xout3]
 
-def defLambdaT(xp,x,u,y,d,k,t,dxp,dyp, fx_model, fxp, Fy_model, Fy_p, alphalss): 
+def defLambdaT(xp,x,u,y,d,k,t,dxp,dyp,dyx,dym, fx_model, fxp, Fy_model, Fy_p, alphalss): 
     """
     SUMMARY:
     It constructs the function to evaluate the modifiers adaptation correction term
@@ -500,7 +514,7 @@ def defLambdaT(xp,x,u,y,d,k,t,dxp,dyp, fx_model, fxp, Fy_model, Fy_p, alphalss):
     
     lambdaT = (1-alphalss)*lambdaTprev + alphalss*gradydiff
     
-    LambdaT = Function('LambdaT', [xp,x,u,d,y,k,t,dxp,dyp,lambdaTprev], [lambdaT])
+    LambdaT = Function('LambdaT', [xp,x,u,d,y,k,t,dxp,dyp,dyx,dym,lambdaTprev], [lambdaT])
     
     return LambdaT
     
@@ -513,10 +527,12 @@ def opt_ssp(n, m, p, nd, Fx ,Fy ,sol_opts, xmin = None, xmax = None, h = None):
     Xs = MX.sym("wss",n) 
     
     # Define parameters
-    par_ss = MX.sym("par_ss", 1+m+n)
+    par_ss = MX.sym("par_ss", 1+m+n+n+p)
     t = par_ss[0]
     us_k = par_ss[1:m+1]
     dxp = par_ss[m+1:m+n+1]
+    dxm = par_ss[m+n+1:m+n+1+n]
+    dym = par_ss[m+n+1+n:m+n+1+n+p]
     
     if xmin is None:
         xmin = -DM.inf(n)
@@ -527,7 +543,7 @@ def opt_ssp(n, m, p, nd, Fx ,Fy ,sol_opts, xmin = None, xmax = None, h = None):
         h = .1 #Defining integrating step if not provided from the user
     gss = []
 
-    Xs_next = Fx( Xs, us_k, dxp, t, h) 
+    Xs_next = Fx( Xs, us_k, dxp, t, h, dxm) 
         
     gss.append(Xs_next - Xs)
     gss = vertcat(*gss)
@@ -565,13 +581,15 @@ def opt_ssp2(n, m, p, nd, Fx ,Fy ,Fss_obj,QForm_ss,sol_opts, umin = None, umax =
     Ys = wss[nxu:nxuy]
     
     # Define parameters
-    par_ss = MX.sym("par_ss", n+m+p+p+1+n)
+    par_ss = MX.sym("par_ss", n+m+p+p+1+n+n+p)
     usp = par_ss[0:m]   
     ysp = par_ss[m:m+p]
     xsp = par_ss[m+p:m+p+n]
     dyp = par_ss[m+p+n:m+p+p+n]
     t = par_ss[m+2*p+n:m+2*p+n+1]
     dxp = par_ss[m+2*p+n+1:m+2*p+n+1+n]
+    dxm = par_ss[m+2*p+n+1+n:m+2*p+n+1+n+n]
+    dym = par_ss[m+2*p+n+1+n+n:m+2*p+n+1+n+n+p]
     
     # Defining constraints
     if ymin is None:
@@ -591,12 +609,12 @@ def opt_ssp2(n, m, p, nd, Fx ,Fy ,Fss_obj,QForm_ss,sol_opts, umin = None, umax =
         h = .1 #Defining integrating step if not provided from the user
     gss = []
 
-    Xs_next = Fx( Xs, Us, dxp, t, h)
+    Xs_next = Fx( Xs, Us, dxp, t, h, dxm)
         
     gss.append(Xs_next - Xs)
     gss = vertcat(*gss)
     
-    Ys_next = Fy( Xs, dyp, t)
+    Ys_next = Fy( Xs, dyp, t, dym)
     gss = vertcat(gss , Ys_next- Ys)
     
     # Defining obj_fun
@@ -668,7 +686,7 @@ def defF_obj_mhe(w, v, t, **kwargs):
 
     return F_obj 
     
-def defFx_mhe(x, u, w, d, k, t, offree, **model): 
+def defFx_mhe(x, u, w, d, k, t, dxm, offree, **model): 
     """
     SUMMARY:
     Starting from equation builds the system model
@@ -718,8 +736,9 @@ def defFx_mhe(x, u, w, d, k, t, offree, **model):
             if offree == "no":
                 G = model['G']
                 Gw = Function('Gw', [w], [mtimes(G,w)])
-                dummyF = vertcat(Fx_mhe(x,u,k,t,w)) + vertcat(Gw(w))
-                Fx_mhe = Function('Fx_mhe', [x,u,k,t,w], [dummyF])
+                Dxm = Function('Dxm', [dxm], [dxm])
+                dummyF = vertcat(Fx_mhe(x,u,k,t,w)) + vertcat(Gw(w)) + vertcat(Dxm[dxm])
+                Fx_mhe = Function('Fx_mhe', [x,u,k,t,w,dxm], [dummyF])
             
             break
         
@@ -735,12 +754,13 @@ def defFx_mhe(x, u, w, d, k, t, offree, **model):
                 
                 G = model['G']
                 Gw = Function('Gw', [w], [mtimes(G,w)])
-                dummyF = vertcat(Fx_mhe2(csi,u,k,t,w)) + vertcat(Gw(w))
-                Fx_mhe = Function('Fx_mhe', [csi,u,k,t,w], [dummyF])
+                Dxm = Function('Dxm', [dxm], [vertcat(dxm,DM.zeros(nd))])
+                dummyF = vertcat(Fx_mhe2(csi,u,k,t,w)) + vertcat(Gw(w)) + vertcat(Dxm[dxm])
+                Fx_mhe = Function('Fx_mhe', [csi,u,k,t,w,dxm], [dummyF])
             
             else:
-                dummyF = Fx(x,u,d,t,w)
-                Fx_mhe = Function('Fx_mhe', [x,u,k,t,w], [dummyF])
+                dummyF = Fx(x,u,d,t,w) + dxm
+                Fx_mhe = Function('Fx_mhe', [x,u,k,t,w,dxm], [dummyF])
             break
                 
     if offree == "lin":
@@ -754,12 +774,13 @@ def defFx_mhe(x, u, w, d, k, t, offree, **model):
             
             G = model['G']
             Gw = Function('Gw', [w], [mtimes(G,w)])
-            dummyF = vertcat(Fx_mhe2(csi,u,k,t,w)) + vertcat(Gw(w))
-            Fx_mhe = Function('Fx_mhe', [csi,u,k,t,w], [dummyF])
+            Dxm = Function('Dxm', [dxm], [vertcat(dxm,DM.zeros(nd))])
+            dummyF = vertcat(Fx_mhe2(csi,u,k,t,w)) + vertcat(Gw(w)) + vertcat(Dxm(dxm))
+            Fx_mhe = Function('Fx_mhe', [csi,u,k,t,w,dxm], [dummyF])
             
     return Fx_mhe
 
-def mhe_opt(n, m, p, n_w, F_obj_mhe, Fx_model, Fy_model, N, N_mhe, ksim, h, mhe_up, sol_opts, wmin = None, wmax = None, vmin = None, vmax = None, ymin = None, ymax = None, xmin = None, xmax = None):
+def mhe_opt(n, nd, m, p, n_w, F_obj_mhe, Fx_model, Fy_model, N, N_mhe, ksim, h, mhe_up, sol_opts, wmin = None, wmax = None, vmin = None, vmax = None, ymin = None, ymax = None, xmin = None, xmax = None):
     """
     SUMMARY:
     It builds the MHE optimization problem
@@ -768,6 +789,7 @@ def mhe_opt(n, m, p, n_w, F_obj_mhe, Fx_model, Fy_model, N, N_mhe, ksim, h, mhe_
     nxv = n+p 
     nxvw = nxv + n_w
     n_opt = N*nxvw + n # total # of variables  
+    nmd = n-nd
     
     # Define symbolic optimization variables
     w_opt = MX.sym("w",n_opt)  # w_opt = [x[T],w[T], ... ,x[T+N-1],w[T+N-1]]
@@ -784,7 +806,7 @@ def mhe_opt(n, m, p, n_w, F_obj_mhe, Fx_model, Fy_model, N, N_mhe, ksim, h, mhe_
     idx = N_mhe if N_mhe == 1 else N_mhe-1
     
     # Define parameters U,Y,x_bar,P_k_r
-    par = MX.sym("par", N*m+N*p+n+n*n+N+(p*(idx))**2+p*(idx)+p*(idx)*n)
+    par = MX.sym("par", N*m+N*p+n+n*n+N+(p*(idx))**2+p*(idx)+p*(idx)*n+(p+nmd)*N)
     U = [par[m*k : m*k+m] for k in range(N)]
     Y = [par[N*m + p*k : N*m + p*k+p] for k in range(N)]
     x_bar = par[N*(m+p):N*(m+p)+n]
@@ -793,6 +815,8 @@ def mhe_opt(n, m, p, n_w, F_obj_mhe, Fx_model, Fy_model, N, N_mhe, ksim, h, mhe_
     Pycondx_inv_r = par[N*(m+p)+n+n*n+N:N*(m+p)+n+n*n+N+(p*(idx))**2]
     Hbig = par[N*(m+p)+n+n*n+N+(p*(idx))**2:N*(m+p)+n+n*n+N+(p*(idx))**2+p*(idx)]
     Obig_r = par[N*(m+p)+n+n*n+N+(p*(idx))**2+p*(idx):N*(m+p)+n+n*n+N+(p*(idx))**2+p*(idx)+p*(idx)*n]
+    DXM = [par[N*(m+p)+n+n*n+N+(p*(idx))**2+p*(idx)+p*(idx)*n + nmd*k : N*(m+p)+n+n*n+N+(p*(idx))**2+p*(idx)+p*(idx)*n+ nmd*k+nmd] for k in range(N)]
+    DYM = [par[N*(m+p)+n+n*n+N+(p*(idx))**2+p*(idx)+p*(idx)*n +nmd*N + p*k : N*(m+p)+n+n*n+N+(p*(idx))**2+p*(idx)+p*(idx)*n+ N*nmd + p*k+p] for k in range(N)]
     
     Pycondx_inv = Pycondx_inv_r.reshape((p*(idx),p*(idx))) 
     Obig = Obig_r.reshape((p*(idx),n)) 
@@ -831,14 +855,14 @@ def mhe_opt(n, m, p, n_w, F_obj_mhe, Fx_model, Fy_model, N, N_mhe, ksim, h, mhe_
     f_obj = 0.0;
 
     for k in range(N):
-        Y_k = Fy_model( X[k], t[k]) + V[k]
+        Y_k = Fy_model( X[k], t[k], DYM[k]) + V[k]
            
         if yFree is False:
             g1.append(Y_k) #bound constraint on Y_k
 
         g.append(Y_k - Y[k])
         
-        X_next = Fx_model( X[k], U[k], h, t[k], W[k] ) 
+        X_next = Fx_model( X[k], U[k], h, t[k], W[k], DXM[k]) 
 
         g.append(X_next - X[k+1])
     

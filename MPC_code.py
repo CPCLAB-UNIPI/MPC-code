@@ -44,6 +44,10 @@ k = SX.sym("k", 1)  # step integration                                      #
 t = SX.sym("t", 1)  # time                                                  #
 dxp = SX.sym("dxp", nxp) # discrete time process state disturbance          #  
 dyp = SX.sym("dyp", ny)  # discrete time process output disturbance         #
+dxm = SX.sym("dxm", nx) # discrete time measured model state disturbance  #  
+dym = SX.sym("dym", ny) # discrete time measured model output disturbance #
+dxmp = SX.sym("dxmp", nxp) # discrete time measured process state disturbance #
+dymp = SX.sym("dymp", ny) # discrete time measured process output disturbance #
 xs = SX.sym('xs',nx) # stationary state value                               #  
 xps = SX.sym('xps',nx) # process stationary state value                     #  
 us = SX.sym('us',nu) # stationary input value                               #
@@ -59,85 +63,85 @@ if ssjacid is True:
     [A, B, C, xlin, ulin, ylin] = ss_p_jac_id(ex_name, nx, nu, ny, nd, k, t)
     # Build linearized model.
     if offree == "lin":
-        [Fx_model,Fy_model] = defF_model(x,u,y,d,k,t,offree, Bd = Bd, Cd = Cd, A = A, B = B, C = C, xlin = xlin, ulin = ulin, ylin = ylin)
+        [Fx_model,Fy_model] = defF_model(x,u,y,d,k,t,dxm,dym,offree, Bd = Bd, Cd = Cd, A = A, B = B, C = C, xlin = xlin, ulin = ulin, ylin = ylin)
     else:
-        [Fx_model,Fy_model] = defF_model(x,u,y,d,k,t,offree, A = A, B = B, C = C, xlin = xlin, ulin = ulin, ylin = ylin)
+        [Fx_model,Fy_model] = defF_model(x,u,y,d,k,t,dxm,dym,offree, A = A, B = B, C = C, xlin = xlin, ulin = ulin, ylin = ylin)
 else:
     #### Model calculation  #####################################################
     if 'User_fxm_Cont' in locals():
         if StateFeedback is True:
             if offree == "lin":
-                [Fx_model,Fy_model] = defF_model(x,u,y,d,k,t,offree, Bd = Bd, Cd = Cd, fx = User_fxm_Cont, Mx = Mx, SF = StateFeedback)
+                [Fx_model,Fy_model] = defF_model(x,u,y,d,k,t,dxm,dym,offree, Bd = Bd, Cd = Cd, fx = User_fxm_Cont, Mx = Mx, SF = StateFeedback)
             else:
-                [Fx_model,Fy_model] = defF_model(x,u,y,d,k,t,offree, fx = User_fxm_Cont, Mx = Mx, SF = StateFeedback)
+                [Fx_model,Fy_model] = defF_model(x,u,y,d,k,t,dxm,dym,offree, fx = User_fxm_Cont, Mx = Mx, SF = StateFeedback)
         else:
             if 'User_fym' in locals():
                 if offree == "lin":
-                    [Fx_model,Fy_model] = defF_model(x,u,y,d,k,t,offree, Bd = Bd, Cd = Cd, fx = User_fxm_Cont, Mx = Mx, fy = User_fym)
+                    [Fx_model,Fy_model] = defF_model(x,u,y,d,k,t,dxm,dym,offree, Bd = Bd, Cd = Cd, fx = User_fxm_Cont, Mx = Mx, fy = User_fym)
                 else:
-                    [Fx_model,Fy_model] = defF_model(x,u,y,d,k,t,offree, fx = User_fxm_Cont, Mx = Mx, fy = User_fym)
+                    [Fx_model,Fy_model] = defF_model(x,u,y,d,k,t,dxm,dym,offree, fx = User_fxm_Cont, Mx = Mx, fy = User_fym)
             else:
                 if offree == "lin":
-                    [Fx_model,Fy_model] = defF_model(x,u,y,d,k,t,offree, Bd = Bd, Cd = Cd, fx = User_fxm_Cont, Mx = Mx, C = C)
+                    [Fx_model,Fy_model] = defF_model(x,u,y,d,k,t,dxm,dym,offree, Bd = Bd, Cd = Cd, fx = User_fxm_Cont, Mx = Mx, C = C)
                 else:
-                    [Fx_model,Fy_model] = defF_model(x,u,y,d,k,t,offree, fx = User_fxm_Cont, Mx = Mx, C = C)
+                    [Fx_model,Fy_model] = defF_model(x,u,y,d,k,t,dxm,dym,offree, fx = User_fxm_Cont, Mx = Mx, C = C)
     elif 'User_fxm_Dis' in locals():
         if StateFeedback is True:
             if offree == "lin":
-                [Fx_model,Fy_model] = defF_model(x,u,y,d,k,t,offree, Bd = Bd, Cd = Cd, Fx = User_fxm_Dis, SF = StateFeedback)
+                [Fx_model,Fy_model] = defF_model(x,u,y,d,k,t,dxm,dym,offree, Bd = Bd, Cd = Cd, Fx = User_fxm_Dis, SF = StateFeedback)
             else:
-                [Fx_model,Fy_model] = defF_model(x,u,y,d,k,t,offree, Fx = User_fxm_Dis, SF = StateFeedback)
+                [Fx_model,Fy_model] = defF_model(x,u,y,d,k,t,dxm,dym,offree, Fx = User_fxm_Dis, SF = StateFeedback)
         else:
             if 'User_fym' in locals():
                 if offree == "lin":
-                    [Fx_model,Fy_model] = defF_model(x,u,y,d,k,t,offree, Bd = Bd, Cd = Cd, Fx = User_fxm_Dis, fy = User_fym)
+                    [Fx_model,Fy_model] = defF_model(x,u,y,d,k,t,dxm,dym,offree, Bd = Bd, Cd = Cd, Fx = User_fxm_Dis, fy = User_fym)
                 else:
-                    [Fx_model,Fy_model] = defF_model(x,u,y,d,k,t,offree, Fx = User_fxm_Dis, fy = User_fym)
+                    [Fx_model,Fy_model] = defF_model(x,u,y,d,k,t,dxm,dym,offree, Fx = User_fxm_Dis, fy = User_fym)
             else:
                 if offree == "lin":
-                    [Fx_model,Fy_model] = defF_model(x,u,y,d,k,t,offree, Bd = Bd, Cd = Cd, Fx = User_fxm_Dis, C = C)
+                    [Fx_model,Fy_model] = defF_model(x,u,y,d,k,t,dxm,dym,offree, Bd = Bd, Cd = Cd, Fx = User_fxm_Dis, C = C)
                 else:
-                    [Fx_model,Fy_model] = defF_model(x,u,y,d,k,t,offree, Fx = User_fxm_Dis, C = C)
+                    [Fx_model,Fy_model] = defF_model(x,u,y,d,k,t,dxm,dym,offree, Fx = User_fxm_Dis, C = C)
     elif 'A' in locals():
         if StateFeedback is True:
             if offree == "lin":
-                [Fx_model,Fy_model] = defF_model(x,u,y,d,k,t,offree, Bd = Bd, Cd = Cd, A = A, B = B, SF = StateFeedback)
+                [Fx_model,Fy_model] = defF_model(x,u,y,d,k,t,dxm,dym,offree, Bd = Bd, Cd = Cd, A = A, B = B, SF = StateFeedback)
             else:
-                [Fx_model,Fy_model] = defF_model(x,u,y,d,k,t,offree, A = A, B = B, SF = StateFeedback)
+                [Fx_model,Fy_model] = defF_model(x,u,y,d,k,t,dxm,dym,offree, A = A, B = B, SF = StateFeedback)
         else:
             if 'User_fym' in locals():
                 if 'xlin' in locals():
                     if offree == "lin":
-                        [Fx_model,Fy_model] = defF_model(x,u,y,d,k,t,offree, Bd = Bd, Cd = Cd, A = A, B = B, fy = User_fym, xlin = xlin, ulin = ulin)
+                        [Fx_model,Fy_model] = defF_model(x,u,y,d,k,t,dxm,dym,offree, Bd = Bd, Cd = Cd, A = A, B = B, fy = User_fym, xlin = xlin, ulin = ulin)
                     else:
-                        [Fx_model,Fy_model] = defF_model(x,u,y,d,k,t,offree, A = A, B = B, fy = User_fym, xlin = xlin, ulin = ulin)
+                        [Fx_model,Fy_model] = defF_model(x,u,y,d,k,t,dxm,dym,offree, A = A, B = B, fy = User_fym, xlin = xlin, ulin = ulin)
                 else:
                     if offree == "lin":
-                        [Fx_model,Fy_model] = defF_model(x,u,y,d,k,t,offree, Bd = Bd, Cd = Cd, A = A, B = B, fy = User_fym)
+                        [Fx_model,Fy_model] = defF_model(x,u,y,d,k,t,dxm,dym,offree, Bd = Bd, Cd = Cd, A = A, B = B, fy = User_fym)
                     else:
-                        [Fx_model,Fy_model] = defF_model(x,u,y,d,k,t,offree, A = A, B = B, fy = User_fym)
+                        [Fx_model,Fy_model] = defF_model(x,u,y,d,k,t,dxm,dym,offree, A = A, B = B, fy = User_fym)
             else:
                 if 'ylin' in locals():
                     if 'xlin' in locals():
                         if offree == "lin":
-                            [Fx_model,Fy_model] = defF_model(x,u,y,d,k,t,offree, Bd = Bd, Cd = Cd, A = A, B = B, C = C, xlin = xlin, ulin = ulin, ylin = ylin)
+                            [Fx_model,Fy_model] = defF_model(x,u,y,d,k,t,dxm,dym,offree, Bd = Bd, Cd = Cd, A = A, B = B, C = C, xlin = xlin, ulin = ulin, ylin = ylin)
                         else:
-                            [Fx_model,Fy_model] = defF_model(x,u,y,d,k,t,offree, A = A, B = B, C = C, xlin = xlin, ulin = ulin, ylin = ylin)
+                            [Fx_model,Fy_model] = defF_model(x,u,y,d,k,t,dxm,dym,offree, A = A, B = B, C = C, xlin = xlin, ulin = ulin, ylin = ylin)
                     else:
                         if offree == "lin":
-                            [Fx_model,Fy_model] = defF_model(x,u,y,d,k,t,offree, Bd = Bd, Cd = Cd, A = A, B = B, C = C, ylin = ylin)
+                            [Fx_model,Fy_model] = defF_model(x,u,y,d,k,t,dxm,dym,offree, Bd = Bd, Cd = Cd, A = A, B = B, C = C, ylin = ylin)
                         else:        
-                            [Fx_model,Fy_model] = defF_model(x,u,y,d,k,t,offree, A = A, B = B, C = C, ylin = ylin)
+                            [Fx_model,Fy_model] = defF_model(x,u,y,d,k,t,dxm,dym,offree, A = A, B = B, C = C, ylin = ylin)
                 elif 'xlin' in locals():
                         if offree == "lin":
-                            [Fx_model,Fy_model] = defF_model(x,u,y,d,k,t,offree, Bd = Bd, Cd = Cd, A = A, B = B, C = C, xlin = xlin, ulin = ulin)
+                            [Fx_model,Fy_model] = defF_model(x,u,y,d,k,t,dxm,dym,offree, Bd = Bd, Cd = Cd, A = A, B = B, C = C, xlin = xlin, ulin = ulin)
                         else:
-                            [Fx_model,Fy_model] = defF_model(x,u,y,d,k,t,offree, A = A, B = B, C = C, xlin = xlin, ulin = ulin)
+                            [Fx_model,Fy_model] = defF_model(x,u,y,d,k,t,dxm,dym,offree, A = A, B = B, C = C, xlin = xlin, ulin = ulin)
                 else:
                     if offree == "lin":
-                        [Fx_model,Fy_model] = defF_model(x,u,y,d,k,t,offree, Bd = Bd, Cd = Cd, A = A, B = B, C = C)
+                        [Fx_model,Fy_model] = defF_model(x,u,y,d,k,t,dxm,dym,offree, Bd = Bd, Cd = Cd, A = A, B = B, C = C)
                     else:
-                        [Fx_model,Fy_model] = defF_model(x,u,y,d,k,t,offree, A = A, B = B, C = C)
+                        [Fx_model,Fy_model] = defF_model(x,u,y,d,k,t,dxm,dym,offree, A = A, B = B, C = C)
 
 #############################################################################
 
@@ -148,25 +152,25 @@ if Fp_nominal is True:
 else:
     if 'Ap' in locals():
         if StateFeedback is True: # x = Ax + Bu ; y = x 
-            [Fx_p,Fy_p] = defF_p(xp,u,y,k,t,dxp,dyp, Ap = Ap, Bp = Bp, SF = StateFeedback)
+            [Fx_p,Fy_p] = defF_p(xp,u,y,k,t,dxp,dyp,dxmp,dymp, Ap = Ap, Bp = Bp, SF = StateFeedback)
         elif 'User_fyp' in locals(): # x = Ax + Bu ; y = h(x,t)  
-            [Fx_p,Fy_p] = defF_p(xp,u,y,k,t,dxp,dyp, Ap = Ap, Bp = Bp, fyp = User_fyp)
+            [Fx_p,Fy_p] = defF_p(xp,u,y,k,t,dxp,dyp,dxmp,dymp, Ap = Ap, Bp = Bp, fyp = User_fyp)
         else:
-            [Fx_p,Fy_p] = defF_p(xp,u,y,k,t,dxp,dyp, Ap = Ap, Bp = Bp, Cp = Cp) 
+            [Fx_p,Fy_p] = defF_p(xp,u,y,k,t,dxp,dyp,dxmp,dymp, Ap = Ap, Bp = Bp, Cp = Cp) 
     elif 'User_fxp_Dis' in locals(): 
         if StateFeedback is True: # x = F(x,t) ; y = x
-            [Fx_p,Fy_p] = defF_p(xp,u,y,k,t,dxp,dyp, Fx = User_fxp_Dis, SF = StateFeedback)
+            [Fx_p,Fy_p] = defF_p(xp,u,y,k,t,dxp,dyp,dxmp,dymp, Fx = User_fxp_Dis, SF = StateFeedback)
         elif 'User_fyp' in locals():   # x = F(x,t) ; y = h(x,t)          
-            [Fx_p,Fy_p] = defF_p(xp,u,y,k,t,dxp,dyp, Fx = User_fxp_Dis, fy = User_fyp) 
+            [Fx_p,Fy_p] = defF_p(xp,u,y,k,t,dxp,dyp,dxmp,dymp, Fx = User_fxp_Dis, fy = User_fyp) 
         elif 'Cp' in locals(): # x = F(x,t)  ; y = Cx 
-            [Fx_p,Fy_p] = defF_p(xp,u,y,k,t,dxp,dyp, Fx = User_fxp_Dis, Cp = Cp)   
+            [Fx_p,Fy_p] = defF_p(xp,u,y,k,t,dxp,dyp,dxmp,dymp, Fx = User_fxp_Dis, Cp = Cp)   
     elif 'User_fxp_Cont' in locals(): 
         if StateFeedback is True: # \dot{x} = f(x,t) ; y = x
-            [Fx_p,Fy_p] = defF_p(xp,u,y,k,t,dxp,dyp, fx = User_fxp_Cont, Mx = Mx, SF = StateFeedback)
+            [Fx_p,Fy_p] = defF_p(xp,u,y,k,t,dxp,dyp,dxmp,dymp, fx = User_fxp_Cont, Mx = Mx, SF = StateFeedback)
         elif 'User_fyp' in locals(): # \dot{x} = f(x,t) ; y = h(x,t) 
-            [Fx_p,Fy_p] = defF_p(xp,u,y,k,t,dxp,dyp, fx = User_fxp_Cont, Mx = Mx, fy = User_fyp)
+            [Fx_p,Fy_p] = defF_p(xp,u,y,k,t,dxp,dyp,dxmp,dymp, fx = User_fxp_Cont, Mx = Mx, fy = User_fyp)
         else:  # \dot{x} = f(x,t)  ; y = Cx 
-            [Fx_p,Fy_p] = defF_p(xp,u,y,k,t,dxp,dyp, fx = User_fxp_Cont, Mx = Mx, Cp = Cp)
+            [Fx_p,Fy_p] = defF_p(xp,u,y,k,t,dxp,dyp,dxmp,dymp, fx = User_fxp_Cont, Mx = Mx, Cp = Cp)
         
 #############################################################################
 
@@ -261,9 +265,9 @@ if estimating is False:
     (solver_ss, wss_lb, wss_ub, gss_lb, gss_ub) = opt_ss(nx, nu, ny, nd, Fx_model,Fy_model, Fss_obj, QForm_ss, DUssForm, sol_optss,umin = umin, umax = umax, w_s = None, z_s = None, ymin = ymin, ymax = ymax, xmin = xmin, xmax = xmax, h = h)
     
     if 'User_fobj_Cont' in locals():
-        (solver, w_lb, w_ub, g_lb, g_ub) = opt_dyn(x, u, y, d, t, nx, nu, ny, nd, Fx_model,Fy_model, F_obj,Vfin, N, QForm, DUForm, DUFormEcon, ContForm, TermCons, nw, sol_optdyn, umin = umin, umax = umax,  W = None, Z = None, ymin = ymin, ymax = ymax, xmin = xmin, xmax = xmax, Dumin = Dumin, Dumax = Dumax, h = h, fx = User_fxm_Cont, xstat = xs, ustat = us)
+        (solver, w_lb, w_ub, g_lb, g_ub) = opt_dyn(x, u, y, d, t, dxm, dym, nx, nu, ny, nd, Fx_model,Fy_model, F_obj,Vfin, N, QForm, DUForm, DUFormEcon, ContForm, TermCons, nw, sol_optdyn, umin = umin, umax = umax,  W = None, Z = None, ymin = ymin, ymax = ymax, xmin = xmin, xmax = xmax, Dumin = Dumin, Dumax = Dumax, h = h, fx = User_fxm_Cont, xstat = xs, ustat = us)
     else:
-        (solver, w_lb, w_ub, g_lb, g_ub) = opt_dyn(x, u, y, d, t, nx, nu, ny, nd, Fx_model,Fy_model, F_obj,Vfin, N, QForm, DUForm, DUFormEcon, ContForm, TermCons, nw, sol_optdyn, umin = umin, umax = umax,  W = None, Z = None, ymin = ymin, ymax = ymax, xmin = xmin, xmax = xmax, Dumin = Dumin, Dumax = Dumax, h = h)
+        (solver, w_lb, w_ub, g_lb, g_ub) = opt_dyn(x, u, y, d, t, dxm, dym, nx, nu, ny, nd, Fx_model,Fy_model, F_obj,Vfin, N, QForm, DUForm, DUFormEcon, ContForm, TermCons, nw, sol_optdyn, umin = umin, umax = umax,  W = None, Z = None, ymin = ymin, ymax = ymax, xmin = xmin, xmax = xmax, Dumin = Dumin, Dumax = Dumax, h = h)
     #############################################################################
 
 #### Kalman steady-state gain definition  ###################################
@@ -318,14 +322,14 @@ if mhe is True:
     G_mhe = G_mhe if 'G_mhe' in locals() else DM.eye(nx+nd)
     if 'User_fx_mhe_Cont' in locals():
         if offree == "lin":
-            Fx_mhe = defFx_mhe(x,u,w,d,k,t,offree, Bd = Bd, fx = User_fx_mhe_Cont, Mx = Mx, G = G_mhe)
+            Fx_mhe = defFx_mhe(x,u,w,d,k,t,dxm,offree, Bd = Bd, fx = User_fx_mhe_Cont, Mx = Mx, G = G_mhe)
         else:
-            Fx_mhe = defFx_mhe(x,u,w,d,k,t,offree, fx = User_fx_mhe_Cont, Mx = Mx, G = G_mhe)
+            Fx_mhe = defFx_mhe(x,u,w,d,k,t,dxm,offree, fx = User_fx_mhe_Cont, Mx = Mx, G = G_mhe)
     elif 'User_fx_mhe_Dis' in locals():
         if offree == "lin":
-            Fx_mhe = defFx_mhe(x,u,w,d,k,t,offree, Bd = Bd, Fx = User_fx_mhe_Dis, G = G_mhe)
+            Fx_mhe = defFx_mhe(x,u,w,d,k,t,dxm,offree, Bd = Bd, Fx = User_fx_mhe_Dis, G = G_mhe)
         else:
-            Fx_mhe = defFx_mhe(x,u,w,d,k,t,offree, Fx = User_fx_mhe_Dis, G = G_mhe)
+            Fx_mhe = defFx_mhe(x,u,w,d,k,t,dxm,offree, Fx = User_fx_mhe_Dis, G = G_mhe)
     
     xmi =  -DM.inf(nx) if xmin is None else xmin    
     dmi =  -DM.inf(nd) if dmin is None else dmin
@@ -360,6 +364,8 @@ if mhe is True:
     Pc_mhe = []
     P_kal_mhe = P0
     Pc_kal_mhe = P0
+    DXM_mhe = []
+    DYM_mhe = []
     
     idx = N_mhe if N_mhe == 1 else N_mhe-1   
     pH_mhe = DM.zeros(ny*(idx),1)
@@ -370,6 +376,10 @@ if mhe is True:
 #############################################################################        
 dx_p = DM.zeros(nxp,1) #Dummy variable when disturbance is not present
 dy_p = DM.zeros(ny,1) #Dummy variable when disturbance is not present
+dxm_p = DM.zeros(nxp,1) #Dummy variable when disturbance is not present
+dym_p = DM.zeros(ny,1) #Dummy variable when disturbance is not present
+dx_m = DM.zeros(nx,1) #Dummy variable when disturbance is not present
+dy_m = DM.zeros(ny,1) #Dummy variable when disturbance is not present
 ysp_k = DM.zeros(ny,1); usp_k = DM.zeros(nu,1); xsp_k = DM.zeros(nx,1); xsp_k_p = DM.zeros(nxp,1)
 x_k = DM(x0_p)
 u_k = DM(u0)
@@ -408,18 +418,34 @@ for ksim in range(Nsim):
     print('Time Iteration ' + str(ksim+1) + ' of ' + str(Nsim))
     t_k = ksim*h #real time updating 
     
-    # Updating process disturbances for the linear case
+    # Updating non-measurable process disturbances for the linear case
     if 'defdxp' in locals():
         [dx_p] = defdxp(t_k)
     if 'defdyp' in locals():
         [dy_p] = defdyp(t_k)
     
+    # Updating measurable disturbances for the linear case
+    if 'defdxm' in locals() and 'defdxmp' in locals():
+        [dx_m] = defdxm(t_k)
+        [dxm_p] = defdxmp(t_k)
+    else:
+        if 'defdxm' in locals():
+           [dx_m] = defdxm(t_k)
+           dxm_p = dx_m
+    if 'defdym' in locals() and 'defdymp' in locals():
+        [dy_m] = defdym(t_k)
+        [dym_p] = defdymp(t_k)
+    else:
+        if 'defdym' in locals():
+            [dy_m] = defdym(t_k)
+            dym_p = dy_m
+            
     ## Store current state
     Xp.append(x_k)
     X_HAT.append(xhat_k)
     
     # Model output
-    yhat_k = Fy_model(xhat_k, dhat_k, t_k)
+    yhat_k = Fy_model(xhat_k, dhat_k, t_k, dy_m)
     
     if (ksim==0):
             y_k = yhat_k
@@ -427,9 +453,9 @@ for ksim in range(Nsim):
     
     # Actual output 
     if Fp_nominal is True:
-        y_k = Fy_p(x_k, dhat_k, t_k)
+        y_k = Fy_p(x_k, dhat_k, t_k, dy_m)
     else: #All the other cases
-        y_k = Fy_p(x_k,dy_p,t_k)        
+        y_k = Fy_p(x_k,dy_p,t_k,dym_p)        
         
         
     # Introducing white noise on output when present
@@ -451,13 +477,13 @@ for ksim in range(Nsim):
         Dx = Function('Dx',[d],[d])
         
         if mhe is False:    
-            dummyFx = vertcat(Fx_model(x1,u,k,d1,t), Dx(d1))
-            Fx_es = Function('Fx_es', [csi,u,k,t], [dummyFx])
+            dummyFx = vertcat(Fx_model(x1,u,k,d1,t,dxm), Dx(d1))
+            Fx_es = Function('Fx_es', [csi,u,k,t,dxm], [dummyFx])
         else:
             Fx_es = Fx_mhe
             
-        dummyFy = Fy_model(x1,d1,t)
-        Fy_es = Function('Fy_es', [csi,t], [dummyFy])
+        dummyFy = Fy_model(x1,d1,t,dym)
+        Fy_es = Function('Fy_es', [csi,t,dym], [dummyFy])
         
     else:
         if nd != 0.0:
@@ -465,19 +491,19 @@ for ksim in range(Nsim):
             sys.exit("The disturbance dimension is not zero but no disturbance model has been selected")
         x_es = xhat_k
         if mhe is False:
-            dummyFx = Fx_model(x,u,k,d,t)
-            Fx_es = Function('Fx_es', [x,u,k,t], [dummyFx])
+            dummyFx = Fx_model(x,u,k,d,t,dxm)
+            Fx_es = Function('Fx_es', [x,u,k,t,dxm], [dummyFx])
         else:
-            dummyFx = Fx_mhe(x,u,k,t,w)
-            Fx_es = Function('Fx_es', [x,u,k,t,w], [dummyFx])
-        dummyFy = Fy_model(x,d,t)        
-        Fy_es = Function('Fy_es', [x,t], [dummyFy])
+            dummyFx = Fx_mhe(x,u,k,t,w,dxm)
+            Fx_es = Function('Fx_es', [x,u,k,t,w,dxm], [dummyFx])
+        dummyFy = Fy_model(x,d,t,dym)        
+        Fy_es = Function('Fy_es', [x,t,dym], [dummyFy])
     
     if kalss is True or lue is True: 
         estype = 'kalss'
         if StateFeedback is True and offree == 'no': 
             K = DM.eye(x_es.size1())
-        [x_es, kwargsout] = defEstimator(Fx_es,Fy_es,y_k,u_k, estype, x_es, t_k, K = K)
+        [x_es, kwargsout] = defEstimator(Fx_es,Fy_es,y_k,u_k, estype, x_es, t_k, dx_m, dy_m, K = K)
 
     elif mhe is True:
         estype = 'mhe'
@@ -492,16 +518,17 @@ for ksim in range(Nsim):
             N_mhe_curr = ksim + 1
             
                 ## Defining the optimization solver
-            (solver_mhe, w_lb_mhe, w_ub_mhe, g_lb_mhe, g_ub_mhe) = mhe_opt(nx+nd, nu, ny, n_w, F_obj_mhe, Fx_es,Fy_es, \
+            (solver_mhe, w_lb_mhe, w_ub_mhe, g_lb_mhe, g_ub_mhe) = mhe_opt(nx+nd, nd, nu, ny, n_w, F_obj_mhe, Fx_es,Fy_es, \
             N_mhe_curr, N_mhe, ksim, h, mhe_up, sol_optmhe, wmin = wmin, wmax = wmax,  vmin = vmin, vmax = vmax, \
             ymin = ymin, ymax = ymax, xmin = xmin_mhe, xmax = xmax_mhe)
         
         
-        [x_es, kwargsout] = defEstimator(Fx_es,Fy_es,y_k,u_k, estype, x_es, t_k, P_min = P_k, Fobj = F_obj_mhe,\
+        [x_es, kwargsout] = defEstimator(Fx_es,Fy_es,y_k,u_k, estype, x_es, t_k, dx_m, dy_m, P_min = P_k, Fobj = F_obj_mhe,\
         ts = h, wk = w_k, vk = v_k, U = U_mhe, X = X_mhe, Xm = Xm_mhe, Y = Y_mhe, T = T_mhe, V = V_mhe, W = W_mhe, xb = x_bar,\
         sol = solver_mhe, solwlb = w_lb_mhe, solwub = w_ub_mhe, solglb = g_lb_mhe, solgub = g_ub_mhe,\
         N = N_mhe_curr, up = mhe_up, Nmhe = N_mhe, C = C_mhe, G = G_mhe,  A = A_mhe, B = B_mhe, f = f_mhe,h = h_mhe, Qk = Qk_mhe, Rk = Rk_mhe, Sk = Sk_mhe,\
-        Q = Q_mhe, bU = bigU_mhe, P = P_mhe, Pc = Pc_mhe, P_kal = P_kal_mhe, P_c_kal = Pc_kal_mhe, pH = pH_mhe, pO = pO_mhe, pPyx = pPyx_mhe, xm_kal = xm_kal_mhe) 
+        Q = Q_mhe, bU = bigU_mhe, P = P_mhe, Pc = Pc_mhe, P_kal = P_kal_mhe, P_c_kal = Pc_kal_mhe, pH = pH_mhe, pO = pO_mhe, pPyx = pPyx_mhe, xm_kal = xm_kal_mhe, \
+            DXM = DXM_mhe, DYM = DYM_mhe, nd = nd) 
         P_k = kwargsout['P_plus']   
         U_mhe = kwargsout['U_mhe']   
         X_mhe = kwargsout['X_mhe']
@@ -533,6 +560,8 @@ for ksim in range(Nsim):
         pPyx_mhe = kwargsout['pPyx_mhe']
         xm_kal_mhe = kwargsout['xm_kal_mhe']
         xc_kal_mhe = kwargsout['xc_kal_mhe']
+        DXM_mhe = kwargsout['DXM_mhe']
+        DYM_mhe = kwargsout['DYM_mhe']
         
         P_K.append(P_k)
     else:
@@ -543,7 +572,7 @@ for ksim in range(Nsim):
             estype = 'kal'
         elif ekf is True: 
             estype = 'ekf'
-        [x_es, kwargsout] = defEstimator(Fx_es,Fy_es,y_k,u_k, estype, x_es, t_k, P_min = P_k, Q = Q_kf, R = R_kf, ts = h)
+        [x_es, kwargsout] = defEstimator(Fx_es,Fy_es,y_k,u_k, estype, x_es, t_k, dx_m, dy_m, P_min = P_k, Q = Q_kf, R = R_kf, ts = h)
         P_k = kwargsout['P_plus']   
          
    
@@ -586,13 +615,13 @@ for ksim in range(Nsim):
         lambdaT_k_r = DM(lambdaT_k).reshape((nu*ny,1)) #shaping lambda matrix in order to enter par_ss
         
         ## Paramenter for Target optimization
-        par_ss = vertcat(usp_k,ysp_k,xsp_k,dhat_k,us_prev,lambdaT_k_r,t_k)    
+        par_ss = vertcat(usp_k,ysp_k,xsp_k,dhat_k,us_prev,lambdaT_k_r,t_k,dx_m,dy_m)    
         
         ## Target calculation
         wss_guess = DM.zeros(nxuy)
         wss_guess[0:nx] = x0_m
         wss_guess[nx:nxu] = u0
-        y0 = Fy_model(x0_m,dhat_k,t_k)
+        y0 = Fy_model(x0_m,dhat_k,t_k,dy_m)
         wss_guess[nxu:nxuy] = y0
         
         start_time = time.time()    
@@ -622,7 +651,7 @@ for ksim in range(Nsim):
         XS.append(xs_k)
         US.append(us_k)
         TIME_SS.append(etimess)
-        ys_k = Fy_model(xs_k,dhat_k,t_k)
+        ys_k = Fy_model(xs_k,dhat_k,t_k,dy_m)
         YS.append(ys_k)
         
         ## Set current state as initial value
@@ -646,7 +675,7 @@ for ksim in range(Nsim):
    
             
         ## Set parameter for dynamic optimisation
-        par = vertcat(xhat_k,cur_tar,dhat_k,u_k,t_k,lambdaT_k_r)
+        par = vertcat(xhat_k,cur_tar,dhat_k,u_k,t_k,lambdaT_k_r,dx_m,dy_m)
         
         ## Solve the OCP
         start_time = time.time()
@@ -671,9 +700,9 @@ for ksim in range(Nsim):
     
     ################ Updating variables xp and xhat ###########################
     if Fp_nominal is True:
-        x_k = Fx_p(x_k, u_k, h, dhat_k, t_k)
+        x_k = Fx_p(x_k, u_k, h, dhat_k, t_k, dxm_p)
     else: # All the other cases
-        x_k = Fx_p(x_k, u_k, dx_p, t_k, h)        
+        x_k = Fx_p(x_k, u_k, dx_p, t_k, h, dxm_p)        
         
     # Check for feasibile condition
     if np.any(np.isnan(x_k.__array__())):
@@ -688,12 +717,12 @@ for ksim in range(Nsim):
     
     ## Next predicted state (already including the disturbance estimate) 
     ## i.e.x(k|k-1)
-    xhat_k = Fx_model(xhat_k, u_k, h, dhat_k, t_k)   
+    xhat_k = Fx_model(xhat_k, u_k, h, dhat_k, t_k, dx_m)   
     
     if estimating is False: 
         
         if Adaptation is True:
-            par_ssp = vertcat(t_k,us_k,dx_p)  
+            par_ssp = vertcat(t_k,us_k,dx_p,dxm_p,dym_p)  
             
             ## Target process calculation
             wssp_guess = x0_p
@@ -714,12 +743,12 @@ for ksim in range(Nsim):
             
            
             ## Process economic optimum calculation
-            par_ssp2 = vertcat(usp_k,ysp_k,xsp_k_p,dy_p,t_k,dx_p)   
+            par_ssp2 = vertcat(usp_k,ysp_k,xsp_k_p,dy_p,t_k,dx_p,dxm_p,dym_p)   
              
             wssp2_guess = DM.zeros(nxp+nu+ny)
             wssp2_guess[0:nxp] = x0_p
             wssp2_guess[nxp:nxp+nu] = u0
-            y0_p = Fy_p(x0_p,dy_p,t_k)
+            y0_p = Fy_p(x0_p,dy_p,t_k,dym_p)
             wssp2_guess[nxp+nu:nxp+nu+ny] = y0_p
             
             sol_ss2 = solver_ss2(lbx = wssp2_lb,

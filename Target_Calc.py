@@ -38,7 +38,7 @@ def opt_ss(n, m, p, nd, Fx_model,Fy_model,Fss_obj,QForm_ss,DUssForm,sol_opts, um
     Ys = wss[nxu:nxuy]
     
     # Define parameters
-    par_ss = MX.sym("par_ss", 2*m+p+nd+p*m+n+1)
+    par_ss = MX.sym("par_ss", 2*m+p+nd+p*m+n+1+p+n)
     usp = par_ss[0:m]   
     ysp = par_ss[m:m+p]
     xsp = par_ss[m+p:m+p+n]
@@ -46,6 +46,8 @@ def opt_ss(n, m, p, nd, Fx_model,Fy_model,Fss_obj,QForm_ss,DUssForm,sol_opts, um
     Us_prev = par_ss[m+p+n+nd:2*m+p+n+nd]
     lambdaT_r = par_ss[2*m+p+n+nd:2*m+p+n+nd+p*m]
     t = par_ss[2*m+p+nd+n+p*m:2*m+p+nd+n+p*m+1]
+    dxm = par_ss[2*m+p+nd+n+p*m+1:2*m+p+nd+n+p*m+1+n]
+    dym = par_ss[2*m+p+nd+n+p*m+1+n:2*m+p+nd+n+p*m+1+n+p]
     
     lambdaT = lambdaT_r.reshape((p,m)) #shaping lambda_r vector in order to reconstruct the matrix
         
@@ -67,12 +69,12 @@ def opt_ss(n, m, p, nd, Fx_model,Fy_model,Fss_obj,QForm_ss,DUssForm,sol_opts, um
         h = .1 #Defining integrating step if not provided from the user
     gss = []
     
-    Xs_next = Fx_model( Xs, Us, h, d, t) 
+    Xs_next = Fx_model( Xs, Us, h, d, t,dxm) 
     
     gss.append(Xs_next - Xs)
     gss = vertcat(*gss)
     
-    Ys_next = Fy_model( Xs, d, t) + mtimes(lambdaT,(Us - Us_prev))
+    Ys_next = Fy_model( Xs, d, t, dym) + mtimes(lambdaT,(Us - Us_prev))
     gss = vertcat(gss , Ys_next- Ys)
 
     # Defining obj_fun
