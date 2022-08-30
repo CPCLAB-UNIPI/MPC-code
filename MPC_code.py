@@ -262,12 +262,18 @@ if estimating is False:
     #############################################################################
     
     #### Solver definition  #####################################################
-    (solver_ss, wss_lb, wss_ub, gss_lb, gss_ub) = opt_ss(nx, nu, ny, nd, Fx_model,Fy_model, Fss_obj, QForm_ss, DUssForm, sol_optss,umin = umin, umax = umax, w_s = None, z_s = None, ymin = ymin, ymax = ymax, xmin = xmin, xmax = xmax, h = h)
+    ymin_s = ymin if ymin_ss is None else ymin_ss; ymax_s = ymax if ymax_ss is None else ymax_ss
+    xmin_s = xmin if xmin_ss is None else xmin_ss; xmax_s = xmax if xmax_ss is None else xmax_ss
+    umin_s = umin if umin_ss is None else umin_ss; umax_s = umax if umax_ss is None else umax_ss
+    (solver_ss, wss_lb, wss_ub, gss_lb, gss_ub) = opt_ss(nx, nu, ny, nd, Fx_model,Fy_model, Fss_obj, QForm_ss, DUssForm, sol_optss, umin = umin_s, umax = umax_s, w_s = None, z_s = None, ymin = ymin_s, ymax = ymax_s, xmin = xmin_s, xmax = xmax_s, h = h)
     
+    ymin_d = ymin if ymin_dyn is None else ymin_dyn; ymax_d = ymax if ymax_dyn is None else ymax_dyn
+    xmin_d = xmin if xmin_dyn is None else xmin_dyn; xmax_d = xmax if xmax_dyn is None else xmax_dyn
+    umin_d = umin if umin_dyn is None else umin_dyn; umax_d = umax if umax_dyn is None else umax_dyn
     if 'User_fobj_Cont' in locals():
-        (solver, w_lb, w_ub, g_lb, g_ub) = opt_dyn(x, u, y, d, t, dxm, dym, nx, nu, ny, nd, Fx_model,Fy_model, F_obj,Vfin, N, QForm, DUForm, DUFormEcon, ContForm, TermCons, nw, sol_optdyn, umin = umin, umax = umax,  W = None, Z = None, ymin = ymin, ymax = ymax, xmin = xmin, xmax = xmax, Dumin = Dumin, Dumax = Dumax, h = h, fx = User_fxm_Cont, xstat = xs, ustat = us)
+        (solver, w_lb, w_ub, g_lb, g_ub) = opt_dyn(x, u, y, d, t, dxm, dym, nx, nu, ny, nd, Fx_model,Fy_model, F_obj,Vfin, N, QForm, DUForm, DUFormEcon, ContForm, TermCons, nw, sol_optdyn, umin = umin_d, umax = umax_d,  W = None, Z = None, ymin = ymin_d, ymax = ymax_d, xmin = xmin_d, xmax = xmax_d, Dumin = Dumin, Dumax = Dumax, h = h, fx = User_fxm_Cont, xstat = xs, ustat = us)
     else:
-        (solver, w_lb, w_ub, g_lb, g_ub) = opt_dyn(x, u, y, d, t, dxm, dym, nx, nu, ny, nd, Fx_model,Fy_model, F_obj,Vfin, N, QForm, DUForm, DUFormEcon, ContForm, TermCons, nw, sol_optdyn, umin = umin, umax = umax,  W = None, Z = None, ymin = ymin, ymax = ymax, xmin = xmin, xmax = xmax, Dumin = Dumin, Dumax = Dumax, h = h)
+        (solver, w_lb, w_ub, g_lb, g_ub) = opt_dyn(x, u, y, d, t, dxm, dym, nx, nu, ny, nd, Fx_model,Fy_model, F_obj,Vfin, N, QForm, DUForm, DUFormEcon, ContForm, TermCons, nw, sol_optdyn, umin = umin_d, umax = umax_d,  W = None, Z = None, ymin = ymin_d, ymax = ymax_d, xmin = xmin_d, xmax = xmax_d, Dumin = Dumin, Dumax = Dumax, h = h)
     #############################################################################
 
 #### Kalman steady-state gain definition  ###################################
