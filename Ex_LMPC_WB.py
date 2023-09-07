@@ -63,11 +63,27 @@ nu = u.size1()  # control vector              #
 ny = y.size1()  # measured output vector      #
 nd = d.size1()  # disturbance                 #
 
-# Luemberger filter tuning params 
-lue = True
-Kx = np.zeros((nx,nd))
-Kd = np.eye(nd)
-K = np.vstack((Kx,Kd))
+# # Luemberger filter tuning params 
+# lue = True
+# # K = np.ones([nx,ny])
+# Kx = np.zeros([nx,ny])
+# Kd = np.eye(nd)
+# K = np.vstack((Kx,Kd))
+
+
+# Kalman filter tuning params
+kal = True # Set True if you want the Kalman filter
+########## Variables dimensions ###############
+nx = x.size1()  # state vector                #
+nu = u.size1()  # control vector              #
+ny = y.size1()  # measured output vector      #
+nd = d.size1()  # disturbance                 #
+###############################################
+Qx_kf = 1.0e-7*np.eye(nx)
+Qd_kf = np.eye(nd)
+Q_kf = scla.block_diag(Qx_kf, Qd_kf)
+R_kf = 1.0e-7*np.eye(ny)
+P0 = 1.0e-8*np.eye(nx+nd)
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 ### 4) Steady-state and dynamic optimizers
@@ -93,7 +109,7 @@ def defSP(t):
         ysp = np.array([0.0, 0.0]) # Output setpoint
         usp = np.array([0., 0.]) # Input setpoints
     else:
-        ysp = np.array([1.0, -1.0]) # Output setpoint
+        ysp = np.array([0.0, -1.0]) # Output setpoint
         usp = np.array([0., 0.]) # Control setpoints
         
     return [ysp, usp, xsp]
@@ -108,8 +124,8 @@ umax = 0.5*np.ones((u.size1(),1))
 # xmax = 10.0*np.ones((x.size1(),1))
 
 ## Output bounds
-# ymin = np.array([-10.0, -8.0, -10.0])
-# ymax = 10.0*np.ones((y.size1(),1))
+ymin = np.array([-10.0, -10.0])
+ymax = 10.0*np.ones((y.size1(),1))
 
 # 4.3) Steady-state optimization : objective function
 Qss = np.diag([1,1])
@@ -119,3 +135,4 @@ Rss = np.zeros((u.size1(),u.size1())) # Control matrix
 Qy = np.diag([1,1])
 Q = np.dot(C.T,np.dot(Qy,C))
 S = np.diag([10,20])
+# R = np.diag([10,10])
