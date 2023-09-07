@@ -17,7 +17,7 @@ import numpy as np
 from Utilities import*
 
 # Target calculation: model constraints and objective function
-def opt_ss(n, m, p, nd, Fx_model,Fy_model,Fss_obj,QForm_ss,DUssForm,sol_opts, umin = None, umax = None, w_s = None, z_s = None, ymin = None, ymax = None, xmin = None, xmax = None, h = None):
+def opt_ss(n, m, p, nd, npx, npy, Fx_model,Fy_model,Fss_obj,QForm_ss,DUssForm, sol_opts, G_ineq_SS, H_eq_SS, umin = None, umax = None, w_s = None, z_s = None, ymin = None, ymax = None, xmin = None, xmax = None, h = None):
     """
     SUMMARY:
     It builds the target optimization problem
@@ -38,7 +38,7 @@ def opt_ss(n, m, p, nd, Fx_model,Fy_model,Fss_obj,QForm_ss,DUssForm,sol_opts, um
     Ys = wss[nxu:nxuy]
     
     # Define parameters
-    par_ss = MX.sym("par_ss", 2*m+p+nd+p*m+n+1+p+n)
+    par_ss = MX.sym("par_ss", 2*m+p+nd+p*m+n+1+npx+npy)
     usp = par_ss[0:m]   
     ysp = par_ss[m:m+p]
     xsp = par_ss[m+p:m+p+n]
@@ -46,8 +46,8 @@ def opt_ss(n, m, p, nd, Fx_model,Fy_model,Fss_obj,QForm_ss,DUssForm,sol_opts, um
     Us_prev = par_ss[m+p+n+nd:2*m+p+n+nd]
     lambdaT_r = par_ss[2*m+p+n+nd:2*m+p+n+nd+p*m]
     t = par_ss[2*m+p+nd+n+p*m:2*m+p+nd+n+p*m+1]
-    dxm = par_ss[2*m+p+nd+n+p*m+1:2*m+p+nd+n+p*m+1+n]
-    dym = par_ss[2*m+p+nd+n+p*m+1+n:2*m+p+nd+n+p*m+1+n+p]
+    px = par_ss[2*m+p+nd+n+p*m+1:2*m+p+nd+n+p*m+1+npx]
+    py = par_ss[2*m+p+nd+n+p*m+1+npx:2*m+p+nd+n+p*m+1+npx+npy]
     
     lambdaT = lambdaT_r.reshape((p,m)) #shaping lambda_r vector in order to reconstruct the matrix
         
@@ -67,15 +67,46 @@ def opt_ss(n, m, p, nd, Fx_model,Fy_model,Fss_obj,QForm_ss,DUssForm,sol_opts, um
     
     if h is None:
         h = .1 #Defining integrating step if not provided from the user
+            
     gss = []
+    gss1 = [] 
+    gss2 = []
     
-    Xs_next = Fx_model( Xs, Us, h, d, t,dxm) 
+    Xs_next = Fx_model( Xs, Us, h, d, t,px) 
     
     gss.append(Xs_next - Xs)
     gss = vertcat(*gss)
     
-    Ys_next = Fy_model( Xs, d, t, dym) + mtimes(lambdaT,(Us - Us_prev))
+    Ys_next = Fy_model( Xs, Us, d, t, py) + mtimes(lambdaT,(Us - Us_prev))
     gss = vertcat(gss , Ys_next- Ys)
+    
+    # initialization of parameters as symbolic variables
+    xSX = SX.sym("xSX", n); uSX = SX.sym("uSX", m); dSX = SX.sym("dSX", nd)
+    tSX = SX.sym("tSX", 1); pxSX = SX.sym("pxSX", npx)
+    
+    if G_ineq_SS != None:
+        g_ineq_SS = G_ineq_SS(xSX,uSX,dSX,tSX,pxSX)
+        G_ineqSS_SX = Function('G_ineqSS_SX', [xSX,uSX,dSX,tSX,pxSX], [g_ineq_SS])
+        
+    if H_eq_SS != None:
+        h_eq_SS = H_eq_SS(xSX,uSX,dSX,tSX,pxSX)
+        H_eqSS_SX = Function('H_eqSS_SX', [xSX,uSX,dSX,tSX,pxSX], [h_eq_SS])
+    
+    if G_ineq_SS != None:
+        G_ss = G_ineq_SS(Xs, Us, d, t, py)
+    else:
+        G_ss = []
+        
+    if H_eq_SS != None:
+        H_ss = H_eq_SS(Xs, Us, d, t, py)
+    else:
+        H_ss = []
+    
+    gss1.append(G_ss)
+    gss2.append(H_ss)
+    
+    gss1 = vertcat(*gss1)
+    gss2 = vertcat(*gss2)
 
     # Defining obj_fun
     dy = Ys
@@ -106,8 +137,22 @@ def opt_ss(n, m, p, nd, Fx_model,Fy_model,Fss_obj,QForm_ss,DUssForm,sol_opts, um
         ng = gss.size1()
     except AttributeError:
         ng = gss.__len__()
-    gss_lb = DM.zeros(ng,1)   # Equalities identification 
-    gss_ub = DM.zeros(ng,1)
+    try: 
+        ng1 = gss1.size1()
+    except AttributeError:
+        ng1 = gss1.__len__()    
+    try: 
+        ng2 = gss2.size1()
+    except AttributeError:
+        ng2 = gss2.__len__() 
+        
+    gss_lb = DM.zeros(ng+ng1+ng2,1)   # Equalities identification 
+    gss_ub = DM.zeros(ng+ng1+ng2,1)
+    
+    if ng1 != 0:
+        gss_lb[ng:ng+ng1] = -DM.inf(ng1)
+    
+    gss = vertcat (gss, gss1, gss2)
     
     nlp_ss = {'x':wss, 'p':par_ss, 'f':fss_obj, 'g':gss}
     

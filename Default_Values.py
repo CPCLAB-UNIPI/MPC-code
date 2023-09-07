@@ -120,3 +120,7 @@ ekf = False # Set True if you want the Kalman filter
  
 #### Moving Horizon Estimation params ###################################
 mhe = False # Set True if you want the MHE
+
+Collocation = False # Set True if want the Collocation Method
+
+LinPar = True

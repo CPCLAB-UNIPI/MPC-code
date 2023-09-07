@@ -152,7 +152,7 @@ def opt_ss_id(n, m, p, nd, Fx_model,Fy_model, umin = None, umax = None, w_s = No
     gss.append(Xs_next - Xs)
     gss = vertcat(*gss)
     
-    Ys_next = Fy_model( Xs, d, t)
+    Ys_next = Fy_model( Xs, Us, d, t)
     gss = vertcat(gss , Ys_next- Ys)
     
     # Defining obj_fun

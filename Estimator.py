@@ -18,23 +18,23 @@ import scipy.linalg as scla
 import numpy as np
 from Utilities import*
 
-def defEstimator(Fx,Fy,y_k,u_k, estype,xhat_min, t_k, dx_m, dy_m, **kwargsin):
+def defEstimator(Fx,Fy,y_k,u_k, estype,xhat_min, t_k, p_x, p_y, **kwargsin):
     if estype == 'kal':
         Q = kwargsin['Q']
         R = kwargsin['R']
         P_min = kwargsin['P_min']
-        [P_plus, P_corr, xhat_corr] = kalman(Fx,Fy,y_k,u_k,Q,R,P_min,xhat_min,t_k,dy_m)
+        [P_plus, P_corr, xhat_corr] = kalman(Fx,Fy,y_k,u_k,Q,R,P_min,xhat_min,t_k,p_y)
         kwargsout = {"P_plus": P_plus, "P_corr": P_corr}
     elif estype == 'ekf':
         Q = kwargsin['Q']
         R = kwargsin['R']
         P_min = kwargsin['P_min']
         ts = kwargsin['ts']
-        [P_plus, P_corr, xhat_corr] = ekf(Fx,Fy,y_k,u_k,Q,R,P_min,xhat_min,ts,t_k,dy_m)
+        [P_plus, P_corr, xhat_corr] = ekf(Fx,Fy,y_k,u_k,Q,R,P_min,xhat_min,ts,t_k,p_y,p_x)
         kwargsout = {"P_plus": P_plus, "P_corr": P_corr}
     elif estype == 'kalss':
         K = kwargsin['K']
-        [xhat_corr] = kalss(Fx,Fy,y_k,u_k,K,xhat_min,t_k,dy_m)
+        [xhat_corr] = kalss(Fx,Fy,y_k,u_k,K,xhat_min,t_k,p_y)
         kwargsout = {}
     elif estype == 'mhe':
         Fobj = kwargsin['Fobj']
@@ -78,18 +78,18 @@ def defEstimator(Fx,Fy,y_k,u_k, estype,xhat_min, t_k, dx_m, dy_m, **kwargsin):
         pO = kwargsin['pO']
         pPyx = kwargsin['pPyx']
         xm_kal = kwargsin['xm_kal']
-        DX = kwargsin['DXM']
-        DY = kwargsin['DYM']
+        PX = kwargsin['PX']
+        PY = kwargsin['PY']
         nd = kwargsin['nd']
         
         
                      
         [P_k, xhat_corr, w_k,v_k,U,Y,T,Xm,X,V,W,xb,C,G, A, B,\
-         f, h, Qk, Rk, Sk, Q, bU,P, Pc, P_kal, P_c_kal, pH,pO,pPyx, xm_kal, xc_kal, DX, DY] = \
+         f, h, Qk, Rk, Sk, Q, bU,P, Pc, P_kal, P_c_kal, pH,pO,pPyx, xm_kal, xc_kal, PX, PY] = \
          mhe(Fx,Fy,y_k,u_k,P_k,\
-        xhat_min,Fobj,ts,t_k,dx_m,dy_m,U,Y,T,Xm,X,V,W,w_k,v_k,xb,N,up,Nmhe,sol,solwlb,solwub,solglb,solgub,\
+        xhat_min,Fobj,ts,t_k,p_x,p_y,U,Y,T,Xm,X,V,W,w_k,v_k,xb,N,up,Nmhe,sol,solwlb,solwub,solglb,solgub,\
         C, G, A, B, f, h, Qk, Rk, Sk, Q, bU,\
-        P, Pc, P_kal, P_c_kal, pH,pO,pPyx, xm_kal, DX, DY, nd)
+        P, Pc, P_kal, P_c_kal, pH,pO,pPyx, xm_kal, PX, PY, nd)
         kwargsout = {"P_plus": P_k, "U_mhe" : U, "X_mhe" : X, "Xm_mhe" : Xm,\
                      "Y_mhe" : Y, "T_mhe" : T,"V_mhe" : V, "W_mhe" : W, "wk" : w_k, "vk" : v_k, "xb" : xb,\
                      "C_mhe" : C,  "G_mhe" : G, "A_mhe" : A, "B_mhe" : B, "f_mhe" : f,\
@@ -97,7 +97,7 @@ def defEstimator(Fx,Fy,y_k,u_k, estype,xhat_min, t_k, dx_m, dy_m, **kwargsin):
                      "Q_mhe" : Q, "bigU_mhe" : bU, "P_mhe" : P, "Pc_mhe" : Pc, \
                      "P_kal_mhe" : P_kal, "P_c_kal_mhe" : P_c_kal, "pH_mhe" : pH, \
                      "pO_mhe" : pO, "pPyx_mhe" : pPyx, "xm_kal_mhe" : xm_kal,"xc_kal_mhe" : xc_kal,\
-                         "DXM_mhe":DX, "DYM_mhe":DY}
+                         "PX_mhe":PX, "PY_mhe":PY}
     return [xhat_corr, kwargsout]
 
 def Kkalss(ny, nd, nx, Q_kf, R_kf, offree, linmod, *var, **kwargs):
@@ -137,8 +137,12 @@ def Kkalss(ny, nd, nx, Q_kf, R_kf, offree, linmod, *var, **kwargs):
         d = var[3]
         t = var[4]
         h = var[5]
-        x_ss = var[6]
-        u_ss= var[7]
+        px = var[6]
+        py= var[7]
+        x_ss = var[8]
+        u_ss= var[9]
+        px_ss= var[10]
+        py_ss= var[11]
         
          # get the system matrices
         Fun_in = SX.get_input(Fx_model)
@@ -152,9 +156,9 @@ def Kkalss(ny, nd, nx, Q_kf, R_kf, offree, linmod, *var, **kwargs):
             xnew = x
             x_ss_p = x_ss
             
-        A_dm = Function('A_dm', [xnew,u,k,t], [Adummy])
+        A_dm = Function('A_dm', [xnew,u,k,t,px], [Adummy])
         
-        A = A_dm(x_ss_p, u_ss, h, 0)
+        A = A_dm(x_ss_p, u_ss, h, 0, px_ss)
         
     try:
         C
@@ -170,12 +174,16 @@ def Kkalss(ny, nd, nx, Q_kf, R_kf, offree, linmod, *var, **kwargs):
             d = var[3]
             t = var[4]
             h = var[5]
-            x_ss = var[6]
-            u_ss= var[7]
+            px = var[6]
+            py= var[7]
+            x_ss = var[8]
+            u_ss= var[9]
+            px_ss= var[10]
+            py_ss= var[11]
         
-        C_dm = Function('C_dm', [x,u,d,t], [Cdummy])
+        C_dm = Function('C_dm', [x,u,d,t,py], [Cdummy])
         
-        C = C_dm(x_ss, u_ss, d_ss, 0.0)
+        C = C_dm(x_ss, u_ss, d_ss, 0.0, py_ss)
 
     
     Aaug = DM.eye(nx+nd)
@@ -220,7 +228,7 @@ def Kkalss(ny, nd, nx, Q_kf, R_kf, offree, linmod, *var, **kwargs):
     
     return (Kaug)
     
-def kalss(Fx,Fy,y_act,u_k,K,xhat_min,t_k,dy_m):
+def kalss(Fx,Fy,y_act,u_k,K,xhat_min,t_k,p_y):
     """
     SUMMARY:
     Steady-state Discrete-time Kalman filter for the given linear system 
@@ -242,7 +250,7 @@ def kalss(Fx,Fy,y_act,u_k,K,xhat_min,t_k,dy_m):
     + xhat_corr - Estimated mean of the state, i.e. x(k|k) 
     """    
     # predicted output: y(k|k-1) 
-    yhat = Fy(xhat_min,t_k,dy_m) 
+    yhat = Fy(xhat_min,u_k,t_k,p_y) 
     
     # estimation error
     e_k = y_act - yhat
@@ -252,7 +260,7 @@ def kalss(Fx,Fy,y_act,u_k,K,xhat_min,t_k,dy_m):
     
     return [xhat_corr]
     
-def kalman(Fx,Fy,y_act,u_k,Q,R,P_min,xhat_min,t_k,dy_m):
+def kalman(Fx,Fy,y_act,u_k,Q,R,P_min,xhat_min,t_k,p_y):
     """
     SUMMARY:
     Discrete-time Kalman filter for the given linear system in state space form.
@@ -283,7 +291,7 @@ def kalman(Fx,Fy,y_act,u_k,Q,R,P_min,xhat_min,t_k,dy_m):
     C_dm = jacobian(Fy.call(Fun_in)[0], Fun_in[0]) 
     
     # predicted output: y(k|k-1) 
-    yhat = Fy(xhat_min,t_k,dy_m) #mtimes(C_dm,xhat_min) 
+    yhat = Fy(xhat_min,u_k,t_k,p_y) #mtimes(C_dm,xhat_min) 
     
     # filter gain
     K = (solve((mtimes(mtimes(C_dm,P_min),C_dm.T) + R).T,(mtimes(P_min,C_dm.T)).T)).T
@@ -302,7 +310,7 @@ def kalman(Fx,Fy,y_act,u_k,Q,R,P_min,xhat_min,t_k,dy_m):
     
     return [P_plus, P_corr, xhat_corr]
     
-def ekf(Fx,Fy,y_act,u_k,Q,R,P_min,xhat_min,ts,t_k,dy_m):
+def ekf(Fx,Fy,y_act,u_k,Q,R,P_min,xhat_min,ts,t_k,p_y,p_x):
     """
     SUMMARY:
     Discrete-time extended Kalman filter for the given nonlinear system.
@@ -329,15 +337,15 @@ def ekf(Fx,Fy,y_act,u_k,Q,R,P_min,xhat_min,ts,t_k,dy_m):
     + xhat_corr - Estimated mean of the state, i.e. x(k|k) 
     """    
     # predicted output: y(k|k-1) 
-    yhat = Fy(xhat_min,t_k,dy_m) 
+    yhat = Fy(xhat_min,u_k,t_k,p_y) 
     
     # get linearization of measurements
     Fun_in = SX.get_input(Fy)
-    C_dm = jacobian(Fy.call(Fun_in)[0], Fun_in[0])
-    C = Function('C', [Fun_in[0],Fun_in[1]], [C_dm])
+    C_dm = jacobian(Fy.call(Fun_in)[0], Fun_in[0])  # jac Fy_x
+    C = Function('C', [Fun_in[0],Fun_in[1],Fun_in[2],Fun_in[3]], [C_dm])
     
     # filter gain 
-    C_k = C(xhat_min,t_k)
+    C_k = C(xhat_min,u_k,t_k,p_y)
     
     C_k = C_k.full()
     P_min = P_min.full() if hasattr(P_min, 'full') else P_min
@@ -362,10 +370,10 @@ def ekf(Fx,Fy,y_act,u_k,Q,R,P_min,xhat_min,ts,t_k,dy_m):
     Fun_in = SX.get_input(Fx)
     
     jac_Fx = jacobian(Fx.call(Fun_in)[0],Fun_in[0])
-    A = Function('A', [Fun_in[0],Fun_in[1],Fun_in[2],Fun_in[3]], [jac_Fx])
+    A = Function('A', [Fun_in[0],Fun_in[1],Fun_in[2],Fun_in[3],Fun_in[4]], [jac_Fx])
     
     # next predicted covariance of the state: P(k+1|k) 
-    A_k = A(xhat_corr,u_k,ts,t_k)
+    A_k = A(xhat_corr,u_k,ts,t_k,p_x)
     
     A_k = A_k.full()
     Q = Q.full() if hasattr(Q, 'full') else Q
@@ -377,20 +385,20 @@ def ekf(Fx,Fy,y_act,u_k,Q,R,P_min,xhat_min,ts,t_k,dy_m):
     
     return [P_plus, P_corr, xhat_corr]
     
-def mhe(Fx,Fy,y_act,u_k,P_k,xhat_min,F_obj,ts,t_k,dxm,dym,U,Y,T,Xmin,X,V,W,w_k,v_k,x_bar,\
+def mhe(Fx,Fy,y_act,u_k,P_k,xhat_min,F_obj,ts,t_k,px,py,U,Y,T,Xmin,X,V,W,w_k,v_k,x_bar,\
         N,mhe_up,N_mhe, solver, w_lb, w_ub, g_lb, g_ub,\
         bigC, bigG, bigA, bigB, bigf, bigh, bigQk, bigRk, bigSk, bigQ, bigU,\
-        bigP, bigPc,P_k_kal,P_corr_kal,Hbig,Obig_r,Pycondx_inv_r,xm_kal,DXM,DYM,nd):
+        bigP, bigPc,P_k_kal,P_corr_kal,Hbig,Obig_r,Pycondx_inv_r,xm_kal,PX,PY,nd):
     
     """
     SUMMARY:
     Moving horizon estimation method for the given nonlinear system.
     
     SYNTAX:
-    assignment = mhe(Fx,Fy,y_act,u_k,P_k,xhat_min,F_obj,ts,t_k,dxm,dym,U,Y,T,Xmin,X,V,W,w_k,v_k,x_bar,\
+    assignment = mhe(Fx,Fy,y_act,u_k,P_k,xhat_min,F_obj,ts,t_k,px,py,U,Y,T,Xmin,X,V,W,w_k,v_k,x_bar,\
         N,mhe_up,N_mhe, solver, w_lb, w_ub, g_lb, g_ub,\
         bigC, bigG, bigA, bigB, bigf, bigh, bigQk, bigRk, bigSk, bigQ, bigU,\
-        bigP, bigPc,P_k_kal,P_corr_kal,Hbig,Obig_r,Pycondx_inv_r,xm_kal,DXM,DYM)
+        bigP, bigPc,P_k_kal,P_corr_kal,Hbig,Obig_r,Pycondx_inv_r,xm_kal,PX,PY)
   
     ARGUMENTS:
     + Fx - State correlation function  
@@ -402,7 +410,7 @@ def mhe(Fx,Fy,y_act,u_k,P_k,xhat_min,F_obj,ts,t_k,dxm,dym,U,Y,T,Xmin,X,V,W,w_k,v
     + F_obj - MHE problem objective function
     + ts - Time step
     + t_k - Current time index
-    + dxm,dym - Measurable disturbances
+    + px,py - Measurable parameters
     + U,Y,T,Xmin,X,V,W,DXM,DYM - Data vectors for inputs, measurements, time indeces, state, noises and measurable disturbances
     + w_k,v_k - Current process and measurement noises
     + x_bar - A priori state estimate
@@ -431,23 +439,25 @@ def mhe(Fx,Fy,y_act,u_k,P_k,xhat_min,F_obj,ts,t_k,dxm,dym,U,Y,T,Xmin,X,V,W,w_k,v
     n = xhat_min.size1()
     m = u_k.size1()
     p = y_act.size1()
+    npx = px.size1()
+    npy = py.size1()
     
    
     # get linearization of measurements
     Fun_in = SX.get_input(Fy)
-    C_dm = jacobian(Fy.call(Fun_in)[0], Fun_in[0])
-    C = Function('C', [Fun_in[0],Fun_in[1]], [C_dm])
+    C_dm = jacobian(Fy.call(Fun_in)[0], Fun_in[0])  # jac Fy_x
+    C = Function('C', [Fun_in[0],Fun_in[1],Fun_in[2],Fun_in[3]], [C_dm])
     
     # get linearization of states
     Fun_in = SX.get_input(Fx)
-    A_dm = jacobian(Fx.call(Fun_in)[0],Fun_in[0])
-    A = Function('A', [Fun_in[0],Fun_in[1],Fun_in[2],Fun_in[3],Fun_in[4]], [A_dm])
+    A_dm = jacobian(Fx.call(Fun_in)[0],Fun_in[0]) # jac Fx_x
+    A = Function('A', [Fun_in[0],Fun_in[1],Fun_in[2],Fun_in[3],Fun_in[4],Fun_in[5]], [A_dm])
     
-    B_dm = jacobian(Fx.call(Fun_in)[0],Fun_in[1])
-    B = Function('B', [Fun_in[0],Fun_in[1],Fun_in[2],Fun_in[3],Fun_in[4]], [B_dm])
+    B_dm = jacobian(Fx.call(Fun_in)[0],Fun_in[1]) # jac Fx_u
+    B = Function('B', [Fun_in[0],Fun_in[1],Fun_in[2],Fun_in[3],Fun_in[4],Fun_in[5]], [B_dm])
     
-    G_dm = jacobian(Fx.call(Fun_in)[0],Fun_in[4])
-    G = Function('G', [Fun_in[0],Fun_in[1],Fun_in[2],Fun_in[3],Fun_in[4]], [G_dm])
+    G_dm = jacobian(Fx.call(Fun_in)[0],Fun_in[4]) # jac Fx_w
+    G = Function('G', [Fun_in[0],Fun_in[1],Fun_in[2],Fun_in[3],Fun_in[4],Fun_in[5]], [G_dm])
     
     n_w = G_dm.size2() #get w dimension
     
@@ -471,24 +481,24 @@ def mhe(Fx,Fy,y_act,u_k,P_k,xhat_min,F_obj,ts,t_k,dxm,dym,U,Y,T,Xmin,X,V,W,w_k,v
         T = vertcat(T,t_k)
         Xmin = vertcat(Xmin,xhat_min)
         Yold = Y
-        DXM = vertcat(DXM,dxm)
-        DYM = vertcat(DYM,dym)
+        PX = vertcat(PX,px)
+        PY = vertcat(PY,py)
     else:
         if N_mhe == 1:
             U = u_k
             Y = y_act
             T = t_k
             Xmin = xhat_min
-            DXM = dxm
-            DYM = dym
+            PX = px
+            PY = py
         else:
             Yold = Y
             U = vertcat(U[m:],u_k,u_k) #doubling u_k to maintain the lenght for U (last component is fictuous)
             Y = vertcat(Y[p:],y_act)
             T = vertcat(T[1:],t_k)
             Xmin = vertcat(Xmin[n:],xhat_min)
-            DXM = vertcat(DXM[n-nd:],dxm)
-            DYM = vertcat(DYM[p:],dym)
+            PX = vertcat(PX[npx:],px)
+            PY = vertcat(PY[npy:],py)
         
     ## Initial guess (on the first NLP run)
     w_guess = DM.zeros(n_opt)
@@ -496,10 +506,10 @@ def mhe(Fx,Fy,y_act,u_k,P_k,xhat_min,F_obj,ts,t_k,dxm,dym,U,Y,T,Xmin,X,V,W,w_k,v
         if key == 0: 
             w_guess[key*nxvw:key*nxvw+n] = x_bar
         else:
-            w_guess[key*nxvw:key*nxvw+n] = Fx(w_guess[(key-1)*nxvw:(key-1)*nxvw+n],U[(key-1)*m:(key-1)*m+m],ts,T[key-1],np.zeros((n_w,1)),DXM[(key-1)*(n-nd):(n-nd)*key])
+            w_guess[key*nxvw:key*nxvw+n] = Fx(w_guess[(key-1)*nxvw:(key-1)*nxvw+n],U[(key-1)*m:(key-1)*m+m],ts,T[key-1],np.zeros((n_w,1)),PX[(key-1)*(npx):(npx)*key])
         w_guess[key*nxvw+n:key*nxvw+nxv] = np.zeros((p,1))#v_k
         w_guess[key*nxvw+nxv:(key+1)*nxvw] = np.zeros((n_w,1))#w_k
-    w_guess[N*nxvw:N*nxvw+n] = Fx(w_guess[key*nxvw:key*nxvw+n],U[key*m:key*m+m],ts,T[key],np.zeros((n_w,1)),DXM[key*(n-nd):(n-nd)*(key+1)])#xhat_min  #x_N
+    w_guess[N*nxvw:N*nxvw+n] = Fx(w_guess[key*nxvw:key*nxvw+n],U[key*m:key*m+m],ts,T[key],np.zeros((n_w,1)),PX[key*(npx):(npx)*(key+1)])#xhat_min  #x_N
 
    
     ## Inverting P_k matrix for optimization solver
@@ -509,7 +519,7 @@ def mhe(Fx,Fy,y_act,u_k,P_k,xhat_min,F_obj,ts,t_k,dxm,dym,U,Y,T,Xmin,X,V,W,w_k,v
     P_k_inv_r = DM(P_k_inv).reshape((n*n,1)) #The DM is needed to avoid error in reshape inside solver definition
     
     ## Set parameter for dynamic optimisation
-    par = vertcat(U,Y,x_bar,P_k_inv_r,T,Pycondx_inv_r,Hbig,Obig_r,DXM,DYM)
+    par = vertcat(U,Y,x_bar,P_k_inv_r,T,Pycondx_inv_r,Hbig,Obig_r,PX,PY)
 
     # Optimization problem
     sol = solver(lbx = w_lb,
@@ -555,11 +565,11 @@ def mhe(Fx,Fy,y_act,u_k,P_k,xhat_min,F_obj,ts,t_k,dxm,dym,U,Y,T,Xmin,X,V,W,w_k,v
         R = Function('R', [Fun_in[0],Fun_in[1],Fun_in[2]], [inv(H_dm[-p:,-p:])])
         R_kk = R(w_k,v_k,t_k).full() 
         
-        C_k = C(xhat_corr,t_k).full()
+        C_k = C(xhat_corr,u_k,t_k,py).full()
         h_k = Y[-p:] - np.dot(C_k,xhat_corr) - v_k 
-        A_k = A(xhat_corr,u_k,ts,t_k,w_k).full()
-        B_k = B(xhat_corr,u_k,ts,t_k,w_k).full()
-        G_k = G(xhat_corr,u_k,ts,t_k,w_k).full()
+        A_k = A(xhat_corr,u_k,ts,t_k,w_k,px).full()
+        B_k = B(xhat_corr,u_k,ts,t_k,w_k,px).full()
+        G_k = G(xhat_corr,u_k,ts,t_k,w_k,px).full()
         f_k = xkp1k - np.dot(A_k,xhat_corr) - np.dot(B_k,u_k) - np.dot(G_k,w_k) 
         
         
@@ -574,7 +584,7 @@ def mhe(Fx,Fy,y_act,u_k,P_k,xhat_min,F_obj,ts,t_k,dxm,dym,U,Y,T,Xmin,X,V,W,w_k,v
         Pi = P_k_kal
         
         # predicted output: y(k|k-1) 
-        yhat = Fy(xm_kal,t_k,dym) 
+        yhat = Fy(xm_kal,u_k,t_k,py) 
     
         # estimation error
         e_k = y_act - yhat
@@ -586,7 +596,7 @@ def mhe(Fx,Fy,y_act,u_k,P_k,xhat_min,F_obj,ts,t_k,dxm,dym,U,Y,T,Xmin,X,V,W,w_k,v
         xc_kal = xm_kal + np.dot(K_k, e_k)
         
         # estimated mean of the state: x(k+1|k) 
-        xm_kal = Fx(xc_kal,u_k,ts,t_k,w_k,dxm)
+        xm_kal = Fx(xc_kal,u_k,ts,t_k,w_k,px)
         
         # next predicted covariance of the state: P(k+1|k) 
         M_k = np.dot(-K_k,S_k.T)
@@ -623,14 +633,14 @@ def mhe(Fx,Fy,y_act,u_k,P_k,xhat_min,F_obj,ts,t_k,dxm,dym,U,Y,T,Xmin,X,V,W,w_k,v
             R_k = H_k[-p:,-p:]
             S_k = H_k[0:n_w,-p:]
             ############################
-            C_k = C(Xmin[0:n],T[0]).full()
+            C_k = C(Xmin[0:n],U[0:m],T[0],PY[0:npy]).full()
             inbrackets = scla.inv(np.linalg.multi_dot([C_k,P_k,C_k.T]) + R_k)
             K_k = np.linalg.multi_dot([P_k,C_k.T,inbrackets])
             P_corr = P_k - np.linalg.multi_dot([K_k,C_k,P_k])
             
             # next predicted covariance of the state: P(k+1|k) 
-            A_k = A(X[0:n],U[0:m],ts,T[0],W[0:n_w]).full()
-            G_k = G(X[0:n],U[0:m],ts,T[0],W[0:n_w]).full()
+            A_k = A(X[0:n],U[0:m],ts,T[0],W[0:n_w],PX[0:npx]).full()
+            G_k = G(X[0:n],U[0:m],ts,T[0],W[0:n_w],PX[0:npx]).full()
             #The following terms comes from the correlation between v and w (Feng et al. 2013)
             M_k = np.dot(-K_k,S_k.T)
             
@@ -756,4 +766,4 @@ def mhe(Fx,Fy,y_act,u_k,P_k,xhat_min,F_obj,ts,t_k,dxm,dym,U,Y,T,Xmin,X,V,W,w_k,v
         
     return [P_k, xhat_corr, w_k,v_k,U,Y,T,Xmin,X,V,W,x_bar, bigC ,bigG,\
             bigA, bigB, bigf, bigh, bigQk, bigRk, bigSk, bigQ, bigU,\
-            bigP, bigPc,P_k_kal,P_corr_kal,Hbig,Obig_r,Pycondx_inv_r,xm_kal,xc_kal,DXM,DYM]
+            bigP, bigPc,P_k_kal,P_corr_kal,Hbig,Obig_r,Pycondx_inv_r,xm_kal,xc_kal,PX,PY]

@@ -37,7 +37,7 @@ Bp = np.array([[-5.426*1e-03, 1.53*1e-05], [1.297, .1218], [0.0, -6.592*1e-02]])
 Cp = np.array([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0],[0.0, 0.0, 1.0]])
 
 # Additive State Disturbances
-def defdxp(t):
+def def_pxp(t):
     """
     SUMMARY:
     It constructs the additive disturbances for the linear case
@@ -59,7 +59,7 @@ def defdxp(t):
 
     return [dxp]
 
-def defdyp(t):
+def def_pyp(t):
     """
     SUMMARY:
     It constructs the additive disturbances for the linear case
@@ -151,7 +151,7 @@ xmax = 10.0*np.ones((x.size1(),1))
 
 ## Output bounds
 ymin = np.array([-10.0, -8.0, -10.0])
-ymax = 10.0*np.ones((y.size1(),1))
+ymax = 10.0*np.ones(y.size1())
 
 # 4.3) Steady-state optimization : objective function
 Qss = np.array([[20.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 1.0]]) #Output matrix

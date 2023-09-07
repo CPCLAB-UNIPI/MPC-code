@@ -92,7 +92,7 @@ def Fdyn_p(x,u):
     return fx
 
 # State map
-def User_fxp_Dis(x,t,u):
+def User_fxp_Dis(x,t,u,pxp,pxmp):
     """
     SUMMARY:
     It constructs the function User_fxp_Dis for the non-linear case
@@ -128,7 +128,7 @@ def User_fxp_Dis(x,t,u):
     return fx_p
 
 # Output Map
-def User_fyp(x,t):
+def User_fyp(x,u,t,pyp,pymp):
     """
     SUMMARY:
     It constructs the function User_fyp for the non-linear case
@@ -153,7 +153,7 @@ def User_fyp(x,t):
     return fy_p
 
 # Additive State Disturbances 
-def defdxp(t):
+def def_pxp(t):
     """
     SUMMARY:
     It constructs the additive disturbances for the linear case
@@ -238,7 +238,7 @@ def Fdyn_m(x,u):
     
     
 # State Map    
-def User_fxm_Dis(x,u,d,t):
+def User_fxm_Dis(x,u,d,t,px):
     """
     SUMMARY:
     It constructs the function User_fxm_Dis for the non-linear case
@@ -274,7 +274,7 @@ def User_fxm_Dis(x,u,d,t):
     return fx_model
 
 # Output Map
-def User_fym(x,d,t):
+def User_fym(x,u,d,t,px):
     
     """
     SUMMARY:

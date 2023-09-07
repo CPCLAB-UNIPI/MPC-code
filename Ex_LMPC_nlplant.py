@@ -37,7 +37,7 @@ d = SX.sym("d", 2)  # disturbance
 # 2.1) Process Parameters
 
 # State map
-def User_fxp_Cont(x,t,u):
+def User_fxp_Cont(x,t,u,pxp,pxmp):
     """
     SUMMARY:
     It constructs the function fx_p for the non-linear case

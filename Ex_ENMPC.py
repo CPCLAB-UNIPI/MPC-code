@@ -26,7 +26,7 @@ xp = SX.sym("xp", 2) # process state vector
 x = SX.sym("x", 2)  # model state vector          
 u = SX.sym("u", 1)  # control vector              
 y = SX.sym("y", 2)  # measured output vector      
-d = SX.sym("d", 2)  # disturbance                        
+d = SX.sym("d", 2)  # disturbance      
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 ### 2) Process and Model construction 
@@ -42,7 +42,7 @@ beta = 4. # product price
 # 2.1) Process Parameters
 
 # State map
-def User_fxp_Cont(xp,t,u):
+def User_fxp_Cont(xp,t,u,pxp,pxmp):
     """
     SUMMARY:
     It constructs the function User_fxp_Cont for the non-linear case
@@ -64,14 +64,14 @@ def User_fxp_Cont(xp,t,u):
 Mx = 10 # Number of elements in each time step 
 
 
-# White Noise
-G_wn = 1e-2*np.array([[1.0, 0.0], [0.0, 1.0]]) # State white noise matrix
-Q_wn = 1e-1*np.array([[1.0, 0.0], [0.0, 1.0]]) # State white noise covariance matrix
+# # White Noise
+# G_wn = 1e-2*np.array([[1.0, 0.0], [0.0, 1.0]]) # State white noise matrix
+# Q_wn = 1e-1*np.array([[1.0, 0.0], [0.0, 1.0]]) # State white noise covariance matrix
 
 # 2.2) Model Parameters
     
 # State Map
-def User_fxm_Cont(x,u,d,t):
+def User_fxm_Cont(x,u,d,t,px):
     """
     SUMMARY:
     It constructs the function fx_model for the non-linear case
@@ -133,7 +133,7 @@ else:
     x_bar = np.row_stack((np.atleast_2d(x0_m).T,np.zeros((nd,1))))
     
     # Defining the state map
-    def User_fx_mhe_Cont(x,u,d,t,w):
+    def User_fx_mhe_Cont(x,u,d,t,px,w):
         """
         SUMMARY:
         It constructs the function fx_model for the non-linear case in MHE problem
@@ -253,3 +253,82 @@ def User_vfin(x,xs):
 
 # Options
 Sol_itmax = 200
+
+
+# S_cust = 20
+
+# R_cust = 10
+
+# Q_cust = 5*np.eye((x.size1()))
+# K_cust = 5*np.eye((x.size1())) #weight of adding variables for collocation methods
+
+
+# b1 = 0.5; b2 = 0.5 
+
+
+# def User_fobj_Dis(x,u,y,xs,us,ys):
+#     """
+#     SUMMARY:
+#     It constructs the objective function for dynamic optimization
+
+ 
+
+#     SYNTAX:
+#     assignment = User_fobj_Dis(x,u,y,xs,us,ys)
+
+ 
+
+#     ARGUMENTS:
+#     + x,u,y         - State, input and output variables
+#     + xs,us,ys      - State, input and output stationary variables
+
+ 
+
+#     OUTPUTS:
+#     + obj         - Objective function
+#     """
+    
+#     obj = 0.5*(xQx(x,Q_cust) + xQx(u,R_cust) + xQx(us,S_cust))
+
+
+#     return obj
+
+    
+
+# def User_fobj_Coll(x,u,y,xs,us,ys,s_Coll):
+#     """
+#     SUMMARY:
+#     It constructs the objective function for dynamic optimization
+
+ 
+
+#     SYNTAX:
+#     assignment = User_fobj_Coll(x,u,y,xs,us,ys,s_Coll)
+
+ 
+
+#     ARGUMENTS:
+#     + x,u,y         - State, input and output variables
+#     + xs,us,ys      - State, input and output stationary variables
+#     + s_Coll        - Internal state variables
+
+ 
+
+#     OUTPUTS:
+#     + obj         - Objective function
+#     """    
+#     s_Coll1 = s_Coll[0:x.size1()]
+#     s_Coll2 = s_Coll[x.size1():2*x.size1()]
+    
+#     # obj = 0.5*h*(b1*(xQx((s_Coll1-xs), K_cust) + xQx(u,R_cust) + xQx(us,S_cust)) + 
+#     #               b2*(xQx((s_Coll2-xs), K_cust) + xQx(u,R_cust) + xQx(us,S_cust)))
+#     # obj = 0.5*(xQx(x,Q_cust) + xQx(u,R_cust) + xQx(us,S_cust))
+#     obj = u[0]*(alfa*cA0 - beta*y[1]) 
+
+#     return obj    
+
+# DUFormEcon = True
+# QForm = True
+# Collocation = True
+ContForm = True
+

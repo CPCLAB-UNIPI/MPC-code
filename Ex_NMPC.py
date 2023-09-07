@@ -28,15 +28,16 @@ xp = SX.sym("xp", 3) # process state vector
 x = SX.sym("x", 3)  # model state vector          
 u = SX.sym("u", 2)  # control vector              
 y = SX.sym("y", 2)  # measured output vector      
-d = SX.sym("d", 2)  # disturbance                        
+d = SX.sym("d", 2)  # disturbance                     
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 ### 2) Process and Model construction 
 
 # 2.1) Process Parameters
 
+
 # State map
-def User_fxp_Cont(x,t,u):
+def User_fxp_Cont(x,t,u,pxp,pxmp):
     """
     SUMMARY:
     It constructs the function fx_p for the non-linear case
@@ -79,7 +80,7 @@ def User_fxp_Cont(x,t,u):
 Mx = 10 # Number of elements in each time step 
 
 # Output map
-def User_fyp(x,t):
+def User_fyp(x,u,t,pyp,pymp):
     """
     SUMMARY:
     It constructs the function User_fyp for the non-linear case
@@ -110,7 +111,7 @@ R_wn = 1e-7*np.array([[1.0, 0.0], [0.0, 1.0]]) # Output white noise covariance m
 # 2.2) Model Parameters
     
 # State Map
-def User_fxm_Cont(x,u,d,t):
+def User_fxm_Cont(x,u,d,t,px):
     """
     SUMMARY:
     It constructs the function fx_model for the non-linear case
@@ -149,7 +150,7 @@ def User_fxm_Cont(x,u,d,t):
     return x_model
 
 # Output Map
-def User_fym(x,d,t):
+def User_fym(x,u,d,t,py):
     """
     SUMMARY:
     It constructs the function fy_m for the non-linear case
@@ -242,4 +243,4 @@ Rss = np.array([[0.0, 0.0], [0.0, 0.0]]) # Control matrix
 
 # 4.4) Dynamic optimization : objective function 
 Q = np.array([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]])
-R = np.array([[0.1, 0.0], [0.0, 0.1]])
+R = np.array([[0.1, 0.0], [0.0, 0.1]])R = np.array([[0.1, 0.0], [0.0, 0.1]])
