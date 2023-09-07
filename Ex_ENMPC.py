@@ -253,25 +253,3 @@ def User_vfin(x,xs):
 
 # Options
 Sol_itmax = 200
-
-
-# Additive State Measurable Disturbances 
-data = np.random.rand(Nsim*int(h),nx)
-def defdxm(t):
-    """
-    SUMMARY:
-    It constructs the meaurable linearly additive disturbances 
-    
-    SYNTAX:
-    assignment = defdp(k)
-  
-    ARGUMENTS:
-    + t             - Variable that indicate the current time
-    
-    OUTPUTS:
-    + dxp      - State disturbance value
-    """
-    
-    # pass external disturbance: Bd*d
-    dxp = 0.10*data[int(t)]
-    return [dxp]

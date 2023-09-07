@@ -153,9 +153,6 @@ umax = np.array([305, 0.25])
 xmin = np.array([0.0, 320, 0.45])
 xmax = np.array([1.0, 375, 0.75])
 
-xmax_dyn = np.array([1.0, 375, 0.9])
-
-
 # 4.3) Steady-state optimization : objective function
 Qss = np.array([[10.0,  0.0],  [0.0, 0.01]]) #Output matrix
 Rss = np.array([[0.0, 0.0], [0.0, 0.0]]) # Control matrix

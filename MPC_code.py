@@ -399,12 +399,8 @@ try:
     P_k = P0
 except NameError:
     P_k = DM.zeros(nx+nd, nx+nd)
-
-try:
-    dhat_k = DM(dhat0)  
-except NameError:
-    dhat_k = DM.zeros(nd)
-
+    
+dhat_k = DM.zeros(nd)
 Xp = []           
 Yp = []           
 U = []

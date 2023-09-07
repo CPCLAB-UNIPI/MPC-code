@@ -182,7 +182,6 @@ offree = "nl"
 x0_p = np.array([0.874317, 325, 0.6528]) # plant
 x0_m = np.array([0.874317, 325, 0.6528]) # model
 u0 = np.array([300.157, 0.1])
-dhat0 = np.array([0, 0.1]) 
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 ### 3) State Estimation
