@@ -244,3 +244,7 @@ Rss = np.array([[0.0, 0.0], [0.0, 0.0]]) # Control matrix
 # 4.4) Dynamic optimization : objective function 
 Q = np.array([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]])
 R = np.array([[0.1, 0.0], [0.0, 0.1]])
+
+slacks = False
+
+Ws = np.eye(4)

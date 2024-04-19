@@ -17,7 +17,7 @@ import numpy as np
 from Utilities import*
 
 
-def opt_dyn(xSX , uSX, ySX, dSX, tSX, pxSX, pySX, n, m, p, nd, npx, npy, Fx_model, Fy_model, F_obj, Vfin, N, QForm, DUForm, DUFormEcon, ContForm, TermCons, nw, sol_opts, G_ineq, H_eq, umin = None, umax = None,  W = None, Z = None, ymin = None, ymax = None, xmin = None, xmax = None, Dumin = None, Dumax = None, h = None, fx = None, xstat = None, ustat = None):
+def opt_dyn(xSX , uSX, ySX, dSX, tSX, pxSX, pySX, n, m, p, nd, npx, npy, ng_v, nh_v, Fx_model, Fy_model, F_obj, Vfin, N, QForm, DUForm, DUFormEcon, ContForm, TermCons, slacks, slacksG, slacksH, nw, sol_opts, G_ineq, H_eq, umin = None, umax = None,  W = None, Z = None, ymin = None, ymax = None, xmin = None, xmax = None, Dumin = None, Dumax = None, h = None, fx = None, xstat = None, ustat = None, Ws = None):
     """
     SUMMARY:
     It builds the dynamic optimization problem
@@ -25,15 +25,19 @@ def opt_dyn(xSX , uSX, ySX, dSX, tSX, pxSX, pySX, n, m, p, nd, npx, npy, Fx_mode
     # Extract dimensions
     nxu = n+m 
     nxuy = nxu + p
+    ns = nw - (nxu*N+n)
     
     # Define symbolic optimization variables
-    w = MX.sym("w",nw)  # w = [x[0],u[0], ... ,u[N-1],x[N],d,xs,us]
+    w = MX.sym("w",nw)  # w = [x[0],u[0], ... ,u[N-1],x[N]] , w = [x[0],u[0], ... ,u[N-1],x[N],Sl]
         
     # Get states
     X = [w[nxu*k : nxu*k+n] for k in range(N+1)]
      
     # Get controls
     U = [w[nxu*k+n : nxu*k + nxu] for k in range(N)]
+    
+    if slacks == True:
+      Sl = w[nw-ns:nw] # 2*ny (+ng) (+nh)
     
     # Define parameters
     par = MX.sym("par", 2*nxu+nd+1+p*m+npx*N+npy*N)
@@ -58,9 +62,15 @@ def opt_dyn(xSX , uSX, ySX, dSX, tSX, pxSX, pySX, n, m, p, nd, npx, npy, Fx_mode
     else:
         yFree = False
         if ymin is None:
-            ymin = -DM.inf(p)
+            if slacks == False:
+                ymin = -DM.inf(p)
+            else:
+                ymin = -1e12*DM.ones(p)
         if ymax is None:
-            ymax = DM.inf(p)
+            if slacks == False:
+                ymax = DM.inf(p)
+            else:
+                ymax = 1e12*DM.ones(p)    
     if xmin is None:
         xmin = -DM.inf(n)
     if xmax is None:
@@ -82,12 +92,12 @@ def opt_dyn(xSX , uSX, ySX, dSX, tSX, pxSX, pySX, n, m, p, nd, npx, npy, Fx_mode
         h = .1 #Defining integrating step if not provided from the user
     
     if G_ineq != None:
-        g_ineq = G_ineq(xSX,uSX,dSX,tSX,pxSX)
-        G_ineqSX = Function('G_ineqSX', [xSX,uSX,dSX,tSX,pxSX], [g_ineq])
+        g_ineq = G_ineq(xSX,uSX,ySX,dSX,tSX,pxSX,pySX)
+        G_ineqSX = Function('G_ineqSX', [xSX,uSX,ySX,dSX,tSX,pxSX,pySX], [g_ineq])
         
     if H_eq != None:
-        h_eq = H_eq(xSX,uSX,dSX,tSX,pxSX)
-        H_eqSX = Function('H_eqSX', [xSX,uSX,dSX,tSX,pxSX], [h_eq])
+        h_eq = H_eq(xSX,uSX,ySX,dSX,tSX,pxSX,pySX)
+        H_eqSX = Function('H_eqSX', [xSX,uSX,ySX,dSX,tSX,pxSX,pySX], [h_eq])
         
     if ContForm is True:
         xdot = fx(xSX,uSX,dSX,tSX,pxSX) + pxSX
@@ -107,6 +117,8 @@ def opt_dyn(xSX , uSX, ySX, dSX, tSX, pxSX, pySX, n, m, p, nd, npx, npy, Fx_mode
     g4 = [] # User defined inequality constraints
     g5 = [] # User defined equality constraints
     f_obj = 0.0;
+    sl_ub = []
+    sl_lb = []
     
 
     ys = Fy_model( xs, us, d, t, par_ymk[:,0]) #Calculating steady-state output if necessary
@@ -118,11 +130,17 @@ def opt_dyn(xSX , uSX, ySX, dSX, tSX, pxSX, pySX, n, m, p, nd, npx, npy, Fx_mode
         Y_k = Fy_model( X[k], U[k], d, t, par_ymk[:,k]) + mtimes(lambdayT,(U[k] - us))
         
         if G_ineq != None:
-            G_k = G_ineqSX(X[k], U[k], d, t, par_xmk[:,k])
+            if slacks == True and slacksG == True:
+                G_k = G_ineqSX(X[k], U[k], Y_k, d, t, par_xmk[:,k], par_ymk[:,k]) - Sl[2*p:2*p+ng_v]
+            else:
+                G_k = G_ineqSX(X[k], U[k], Y_k, d, t, par_xmk[:,k], par_ymk[:,k])
         else:
             G_k = []
         if H_eq != None:
-            H_k = H_eqSX(X[k], U[k], d, t, par_xmk[:,k])
+            if slacks == True and slacksH == True:
+                H_k = H_eqSX(X[k], U[k], Y_k, d, t, par_xmk[:,k], par_ymk[:,k]) - Sl[2*p+ng_v:2*p+ng_v+nh_v]
+            else:
+                H_k = H_eqSX(X[k], U[k], Y_k, d, t, par_xmk[:,k], par_ymk[:,k])
         else:
             H_k = []
         
@@ -158,14 +176,20 @@ def opt_dyn(xSX , uSX, ySX, dSX, tSX, pxSX, pySX, n, m, p, nd, npx, npy, Fx_mode
             if QForm is True:   #Checking if the OF is quadratic
                 dx = dx - xs
                 du = du - us
-                dy = dy - ys
+                dy = dy - ys              
             if DUForm is True:  #Checking if the OF requires DU instead of u
                 du = DU_k
 #            if DUFormEcon is True:  #Checking if the OF requires DU instead of u
             us_obj = DU_k if DUFormEcon is True else us
         
-            f_obj_new = F_obj( dx, du, dy, xs, us_obj, ys)        
+            f_obj_new = F_obj( dx, du, dy, xs, us_obj, ys)
+            if slacks == True:
+                f_obj_new = F_obj( dx, du, dy, xs, us_obj, ys) + mtimes(Sl.T,mtimes(Ws,Sl))
             f_obj += f_obj_new
+            
+            if slacks == True:
+                sl_ub.append(Sl[0:p])
+                sl_lb.append(Sl[p:2*p])
         
     dx = X[N]
     if QForm is True:   #Checking if the OF is quadratic
@@ -176,9 +200,12 @@ def opt_dyn(xSX , uSX, ySX, dSX, tSX, pxSX, pySX, n, m, p, nd, npx, npy, Fx_mode
     g = vertcat(*g)
     g1 = vertcat(*g1) #bound constraint on Y_k
     g2 = vertcat(*g2) #bound constraint on Du_k
-    g4 = vertcat(*g4)
+    g4 = vertcat(*g4) 
     g5 = vertcat(*g5)
-    
+    if slacks == True:
+        sl_ub = vertcat(*sl_ub)
+        sl_lb = vertcat(*sl_lb)
+        
     vfin = Vfin(dx,xs)
     f_obj += vfin #adding the final weight
     
@@ -187,6 +214,7 @@ def opt_dyn(xSX , uSX, ySX, dSX, tSX, pxSX, pySX, n, m, p, nd, npx, npy, Fx_mode
     w_ub = DM.inf(nw)
     w_lb[0:n] = xmin
     w_ub[0:n] = xmax
+    w_lb[nw-ns:nw] = DM.zeros(ns) # sl > 0
     
     ng = g.size1()
     ng1 = g1.size1()
@@ -197,12 +225,22 @@ def opt_dyn(xSX , uSX, ySX, dSX, tSX, pxSX, pySX, n, m, p, nd, npx, npy, Fx_mode
     g_ub = DM.zeros(ng+ng1+ng2+ng4+ng5,1)
     
     if ng1 != 0:
-       g_lb[ng:ng+ng1] = (ymin*DM.ones(N)).reshape(ng1,1)
-       g_ub[ng:ng+ng1] = (ymax*DM.ones(N)).reshape(ng1,1)
+       if slacks == False: 
+           g_lb[ng:ng+ng1] = mtimes(ymin,DM.ones(N).T).reshape((ng1,1))
+           g_ub[ng:ng+ng1] = mtimes(ymax,DM.ones(N).T).reshape((ng1,1))
+       else:
+           g_lb = DM.zeros(ng+2*ng1+ng2+ng4+ng5,1)
+           g_ub = DM.zeros(ng+2*ng1+ng2+ng4+ng5,1)
+           g1_old = g1
+           g1 = MX.zeros(2*ng1)
+           g1[0:ng1] = mtimes(ymin,DM.ones(N).T).reshape((ng1,1)) - g1_old - sl_lb
+           g1[ng1:2*ng1] = -mtimes(ymax,DM.ones(N).T).reshape((ng1,1)) + g1_old - sl_ub
+           g_lb[ng:ng+2*ng1] = -DM.inf(2*ng1)
+           ng1 = g1.size1()
     
     if ng2 != 0:
-       g_lb[ng+ng1:ng+ng1+ng2] = (Dumin*DM.ones(N)).reshape(ng2,1)
-       g_ub[ng+ng1:ng+ng1+ng2] = (Dumax*DM.ones(N)).reshape(ng2,1)
+       g_lb[ng+ng1:ng+ng1+ng2] = mtimes(Dumin,DM.ones(N).T).reshape((ng2,1))
+       g_ub[ng+ng1:ng+ng1+ng2] = mtimes(Dumax,DM.ones(N).T).reshape((ng2,1))
               
     if ng4 != 0:
        g_lb[ng+ng1+ng2:ng+ng1+ng2+ng4] = -DM.inf(ng4)
@@ -223,7 +261,7 @@ def opt_dyn(xSX , uSX, ySX, dSX, tSX, pxSX, pySX, n, m, p, nd, npx, npy, Fx_mode
 
 
 
-def opt_dyn_CM(xSX , uSX, ySX, dSX, tSX, pxSX, pySX, n, m, p, nd,npx,npy, Fx_model, Fy_model, F_obj, Vfin, N, QForm, DUForm, DUFormEcon, ContForm, TermCons, nw, sol_opts, G_ineq , H_eq,  umin = None, umax = None,  W = None, Z = None, ymin = None, ymax = None, xmin = None, xmax = None, Dumin = None, Dumax = None, h = None, fx = None, xstat = None, ustat = None, Mx = None):
+def opt_dyn_CM(xSX , uSX, ySX, dSX, tSX, pxSX, pySX, n, m, p, nd, npx, npy, ng_v, nh_v, Fx_model, Fy_model, F_obj, Vfin, N, QForm, DUForm, DUFormEcon, ContForm, TermCons, slacks, slacksG, slacksH, nw, sol_opts, G_ineq , H_eq,  umin = None, umax = None,  W = None, Z = None, ymin = None, ymax = None, xmin = None, xmax = None, Dumin = None, Dumax = None, h = None, fx = None, xstat = None, ustat = None, Mx = None, Ws = None):
 
     """
     SUMMARY:
@@ -233,6 +271,7 @@ def opt_dyn_CM(xSX , uSX, ySX, dSX, tSX, pxSX, pySX, n, m, p, nd,npx,npy, Fx_mod
     nxu = n+m
     nxuk = 3*n+m
     nxuy = nxu + p
+    ns = nw - (nxu*N+n)
     
     nw = nw + 2*n*N #number of optimization variables for collocation methods
     
@@ -247,6 +286,9 @@ def opt_dyn_CM(xSX , uSX, ySX, dSX, tSX, pxSX, pySX, n, m, p, nd,npx,npy, Fx_mod
     S2 = [w[nxuk*k+2*n : nxuk*k+3*n] for k in range(N)]
     # Get controls
     U = [w[nxuk*k+3*n : nxuk*k +3*n+m] for k in range(N)]
+    
+    if slacks == True:
+      Sl = w[nw-ns:nw] # 2*ny (+ng) (+nh)
     
     # Define parameters
     par = MX.sym("par", 2*nxu+nd+1+p*m+npx*N+npy*N)
@@ -271,9 +313,15 @@ def opt_dyn_CM(xSX , uSX, ySX, dSX, tSX, pxSX, pySX, n, m, p, nd,npx,npy, Fx_mod
     else:
         yFree = False
         if ymin is None:
-            ymin = -DM.inf(p)
+            if slacks == False:
+                ymin = -DM.inf(p)
+            else:
+                ymin = -1e12*DM.ones(p)
         if ymax is None:
-            ymax = DM.inf(p)
+            if slacks == False:
+                ymax = DM.inf(p)
+            else:
+                ymax = 1e12*DM.ones(p)
     if xmin is None:
         xmin = -DM.inf(n)
     if xmax is None:
@@ -297,12 +345,12 @@ def opt_dyn_CM(xSX , uSX, ySX, dSX, tSX, pxSX, pySX, n, m, p, nd,npx,npy, Fx_mod
     hSX = SX.sym("h_SX", 1) 
     
     if G_ineq != None:
-        g_ineq = G_ineq(xSX,uSX,dSX,tSX,pxSX)
-        G_ineqSX = Function('G_ineqSX', [xSX,uSX,dSX,tSX,pxSX], [g_ineq])
+        g_ineq = G_ineq(xSX,uSX,ySX,dSX,tSX,pxSX,pySX)
+        G_ineqSX = Function('G_ineqSX', [xSX,uSX,ySX,dSX,tSX,pxSX,pySX], [g_ineq])
         
     if H_eq != None:
-        h_eq = H_eq(xSX,uSX,dSX,tSX,pxSX)
-        H_eqSX = Function('H_eqSX', [xSX,uSX,dSX,tSX,pxSX], [h_eq])
+        h_eq = H_eq(xSX,uSX,ySX,dSX,tSX,pxSX,pySX)
+        H_eqSX = Function('H_eqSX', [xSX,uSX,ySX,dSX,tSX,pxSX,pySX], [h_eq])
         
     
     fx_SX = fx(xSX,uSX,dSX,tSX,pxSX)
@@ -342,6 +390,9 @@ def opt_dyn_CM(xSX , uSX, ySX, dSX, tSX, pxSX, pySX, n, m, p, nd,npx,npy, Fx_mod
     g4 = [] # User defined inequality constraints
     g5 = [] # User defined equality constraints
     f_obj = 0.0;
+    sl_ub = []
+    sl_lb = []
+    
     
 
     ys = Fy_model( xs, us, d, t, par_ymk[:,0]) #Calculating steady-state output if necessary
@@ -354,11 +405,17 @@ def opt_dyn_CM(xSX , uSX, ySX, dSX, tSX, pxSX, pySX, n, m, p, nd,npx,npy, Fx_mod
         Y_k = Fy_model( X[k], U[k], d, t, par_ymk[:,k]) + mtimes(lambdayT,(U[k] - us))
         
         if G_ineq != None:
-            G_k = G_ineqSX(X[k], U[k], d, t, par_xmk[:,k])
+            if slacks == True and slacksG == True:
+                G_k = G_ineqSX(X[k], U[k], Y_k, d, t, par_xmk[:,k], par_ymk[:,k]) - Sl[2*p:2*p+ng_v]
+            else:
+                G_k = G_ineqSX(X[k], U[k], Y_k, d, t, par_xmk[:,k], par_ymk[:,k])
         else:
             G_k = []
         if H_eq != None:
-            H_k = H_eqSX(X[k], U[k], d, t, par_xmk[:,k])
+            if slacks == True and slacksH == True:
+                H_k = H_eqSX(X[k], U[k], Y_k, d, t, par_xmk[:,k], par_ymk[:,k]) - Sl[2*p+ng_v:2*p+ng_v+nh_v]
+            else:
+                H_k = H_eqSX(X[k], U[k], Y_k, d, t, par_xmk[:,k], par_ymk[:,k])
         else:
             H_k = []
         
@@ -396,6 +453,7 @@ def opt_dyn_CM(xSX , uSX, ySX, dSX, tSX, pxSX, pySX, n, m, p, nd,npx,npy, Fx_mod
             dy = Y_k
             ds1 = S1[k]
             ds2 = S2[k]
+            ds = vertcat(ds1,ds2)
             
             if QForm is True:   #Checking if the OF is quadratic
                 dx = dx - xs
@@ -422,9 +480,14 @@ def opt_dyn_CM(xSX , uSX, ySX, dSX, tSX, pxSX, pySX, n, m, p, nd,npx,npy, Fx_mod
             g3.append(rg1) #internal states
             g3.append(rg2) 
             
-            #f_obj_new = F_obj( dx, du, dy, xs, us_obj, ys) 
-            f_obj_new = F_obj( dx, du, dy, xs, us_obj, ys, ds) 
+            f_obj_new = F_obj( dx, du, dy, xs, us_obj, ys, ds)
+            if slacks == True:
+                f_obj_new = F_obj( dx, du, dy, xs, us_obj, ys, ds) + mtimes(Sl.T,mtimes(Ws,Sl))
             f_obj += f_obj_new
+            
+            if slacks == True:
+                sl_ub.append(Sl[0:p])
+                sl_lb.append(Sl[p:2*p])
         
     dx = X[N]
     if QForm is True:   #Checking if the OF is quadratic
@@ -438,6 +501,10 @@ def opt_dyn_CM(xSX , uSX, ySX, dSX, tSX, pxSX, pySX, n, m, p, nd,npx,npy, Fx_mod
     g3 = vertcat(*g3) #bound constraint on S_k
     g4 = vertcat(*g4)
     g5 = vertcat(*g5)
+    if slacks == True:
+        sl_ub = vertcat(*sl_ub)
+        sl_lb = vertcat(*sl_lb)
+        
     
     vfin = Vfin(dx,xs)
     f_obj += vfin #adding the final weight
@@ -447,6 +514,7 @@ def opt_dyn_CM(xSX , uSX, ySX, dSX, tSX, pxSX, pySX, n, m, p, nd,npx,npy, Fx_mod
     w_ub = DM.inf(nw)
     w_lb[0:n] = xmin
     w_ub[0:n] = xmax
+    w_lb[nw-ns:nw] = DM.zeros(ns) # sl > 0
     
     ng = g.size1() #x
     ng1 = g1.size1() #y
@@ -458,13 +526,24 @@ def opt_dyn_CM(xSX , uSX, ySX, dSX, tSX, pxSX, pySX, n, m, p, nd,npx,npy, Fx_mod
     g_ub = DM.zeros(ng+ng1+ng2+ng3+ng4+ng5,1)
     
     
-    if ng1 != 0:
-       g_lb[ng:ng+ng1] = (ymin*DM.ones(N)).reshape(ng1,1)
-       g_ub[ng:ng+ng1] = (ymax*DM.ones(N)).reshape(ng1,1)
+    if ng1 != 0:  # yFree = False
+       if slacks == False: 
+           g_lb[ng:ng+ng1] = mtimes(ymin,DM.ones(N).T).reshape((ng1,1))
+           g_ub[ng:ng+ng1] = mtimes(ymax,DM.ones(N).T).reshape((ng1,1))
+       else:
+           # Ridefine g1 (- inf < g1 < 0 )
+           g_lb = DM.zeros(ng+2*ng1+ng2+ng3+ng4+ng5,1) 
+           g_ub = DM.zeros(ng+2*ng1+ng2+ng3+ng4+ng5,1)
+           g1_old = g1
+           g1 = MX.zeros(2*ng1)
+           g1[0:ng1] = mtimes(ymin,DM.ones(N).T).reshape((ng1,1)) - g1_old - sl_lb
+           g1[ng1:2*ng1] = -mtimes(ymax,DM.ones(N).T).reshape((ng1,1)) + g1_old - sl_ub
+           g_lb[ng:ng+2*ng1] = -DM.inf(2*ng1)
+           ng1 = g1.size1()
     
     if ng2 != 0:
-       g_lb[ng+ng1:ng+ng1+ng2] = (Dumin*DM.ones(N)).reshape(ng2,1)
-       g_ub[ng+ng1:ng+ng1+ng2] = (Dumax*DM.ones(N)).reshape(ng2,1)
+       g_lb[ng+ng1:ng+ng1+ng2] = mtimes(Dumin,DM.ones(N).T).reshape((ng2,1))
+       g_ub[ng+ng1:ng+ng1+ng2] = mtimes(Dumax,DM.ones(N).T).reshape((ng2,1))
               
     if ng4 != 0:
        g_lb[ng+ng1+ng2+ng3:ng+ng1+ng2+ng3+ng4] = -DM.inf(ng4)

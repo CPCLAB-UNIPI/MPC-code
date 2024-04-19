@@ -22,7 +22,7 @@ from Estimator import *
 from Control_Calc import *
 from Default_Values import *
 
-ex_name = __import__('Ex_LMPC_WB') # Insert here your file name
+ex_name = __import__('Ex_NMPC_ST') # Insert here your file name
 import sys
 sys.modules['ex_name'] = ex_name
 from ex_name import * #Loading example
@@ -51,6 +51,14 @@ nxuy = nx + nu + ny # state+control               #
 nxuk = nx + nu + 2*nx # state + control + internal states
 nw = nx*(N+1) + nu*N # total of variables         #
 nw_c = nx*(N+1) + nu*N + 2*nx*N # total of variables for collocation methods
+
+if 'Ws' in locals() and slacks == True:
+    Ws = Ws
+    ns = Ws.shape[0]
+else:
+    Ws = []
+    ns = 0
+    
 ###################################################
 
 ########## Fixed symbolic variables #########################################
@@ -247,6 +255,7 @@ if estimating is False:
             Vfin = defVfin(x, xs, A = A, B = B, Q = Q, R = R)
     else:
         Vfin = defVfin(x, xs)
+
     #############################################################################
     
     ### Solver options ##########################################################
@@ -296,15 +305,34 @@ if estimating is False:
     
     if 'User_g_ineq' not in locals():
         User_g_ineq = None
+        ng = 0
+    elif 'User_g_ineq' in locals() and slacksG == True: 
+        g_ineq = User_g_ineq(x,u,y,d,t,px,py)
+        G_ineqSX = Function('G_ineqSX', [x,u,y,d,t,px,py], [g_ineq])
+        ng = G_ineqSX(x,u,y,d,t,px,py).size1()
+    else:
+        ng = 0
+        
     if 'User_h_eq' not in locals():
         User_h_eq = None
+        nh = 0
+    elif 'User_h_eq' in locals() and slacksH == True:
+        h_eq = User_h_eq(x,u,y,d,t,px,py)
+        H_eqSX = Function('H_eqSX', [x,u,y,d,t,px,py], [h_eq])
+        nh = H_eqSX(x,u,y,d,t,px,py).size1()
+    else:
+        nh = 0
+        
+    if slacks == True:
+        nw = nw + ns
+        nw_c = nw_c + ns
     
     if 'User_fobj_Cont' in locals():
-        (solver, w_lb, w_ub, g_lb, g_ub) = opt_dyn(x, u, y, d, t, px, py, nx, nu, ny, nd, npx,npy, Fx_model,Fy_model, F_obj,Vfin, N, QForm, DUForm, DUFormEcon, ContForm, TermCons,  nw, sol_optdyn, User_g_ineq,  User_h_eq, umin = umin_d, umax = umax_d,  W = None, Z = None, ymin = ymin_d, ymax = ymax_d, xmin = xmin_d, xmax = xmax_d, Dumin = Dumin, Dumax = Dumax, h = h, fx = User_fxm_Cont, xstat = xs, ustat = us)
+        (solver, w_lb, w_ub, g_lb, g_ub) = opt_dyn(x, u, y, d, t, px, py, nx, nu, ny, nd, npx, npy, ng, nh, Fx_model,Fy_model, F_obj,Vfin, N, QForm, DUForm, DUFormEcon, ContForm, TermCons, slacks, slacksG, slacksH,  nw, sol_optdyn, User_g_ineq,  User_h_eq, umin = umin_d, umax = umax_d,  W = None, Z = None, ymin = ymin_d, ymax = ymax_d, xmin = xmin_d, xmax = xmax_d, Dumin = Dumin, Dumax = Dumax, h = h, fx = User_fxm_Cont, xstat = xs, ustat = us, Ws = Ws)
     elif 'User_fobj_Coll' in locals():
-        (solver, w_lb, w_ub, g_lb, g_ub) = opt_dyn_CM(x, u, y, d, t, px, py, nx, nu, ny, nd, npx,npy, Fx_model,Fy_model, F_obj,Vfin, N, QForm, DUForm, DUFormEcon, ContForm, TermCons,  nw, sol_optdyn, User_g_ineq,  User_h_eq, umin = umin_d, umax = umax_d,  W = None, Z = None, ymin = ymin_d, ymax = ymax_d, xmin = xmin_d, xmax = xmax_d, Dumin = Dumin, Dumax = Dumax, h = h, fx = User_fxm_Cont, xstat = xs, ustat = us)
+        (solver, w_lb, w_ub, g_lb, g_ub) = opt_dyn_CM(x, u, y, d, t, px, py, nx, nu, ny, nd, npx, npy, ng, nh, Fx_model,Fy_model, F_obj,Vfin, N, QForm, DUForm, DUFormEcon, ContForm, TermCons, slacks, slacksG, slacksH,  nw, sol_optdyn, User_g_ineq,  User_h_eq, umin = umin_d, umax = umax_d,  W = None, Z = None, ymin = ymin_d, ymax = ymax_d, xmin = xmin_d, xmax = xmax_d, Dumin = Dumin, Dumax = Dumax, h = h, fx = User_fxm_Cont, xstat = xs, ustat = us, Ws = Ws)
     else:
-        (solver, w_lb, w_ub, g_lb, g_ub) = opt_dyn(x, u, y, d, t, px, py, nx, nu, ny, nd, npx,npy, Fx_model,Fy_model, F_obj,Vfin, N, QForm, DUForm, DUFormEcon, ContForm, TermCons,  nw, sol_optdyn, User_g_ineq,  User_h_eq, umin = umin_d, umax = umax_d,  W = None, Z = None, ymin = ymin_d, ymax = ymax_d, xmin = xmin_d, xmax = xmax_d, Dumin = Dumin, Dumax = Dumax, h = h)
+        (solver, w_lb, w_ub, g_lb, g_ub) = opt_dyn(x, u, y, d, t, px, py, nx, nu, ny, nd, npx, npy, ng, nh, Fx_model,Fy_model, F_obj,Vfin, N, QForm, DUForm, DUFormEcon, ContForm, TermCons, slacks, slacksG, slacksH, nw, sol_optdyn, User_g_ineq,  User_h_eq, umin = umin_d, umax = umax_d,  W = None, Z = None, ymin = ymin_d, ymax = ymax_d, xmin = xmin_d, xmax = xmax_d, Dumin = Dumin, Dumax = Dumax, h = h, Ws = Ws)
     #############################################################################
 
 #### Kalman steady-state gain definition  ###################################
@@ -452,6 +480,7 @@ P_K = []
 Esim = []
 X_KF = []
 Ysp = []
+Sl = []
 
 for ksim in range(Nsim):
     print('Time Iteration ' + str(ksim+1) + ' of ' + str(Nsim))
@@ -728,11 +757,11 @@ for ksim in range(Nsim):
         else:
             ## Initial guess (warm start)
             if Collocation == True:
-                if solver.stats()['return_status'] != 'Infeasible_Problem_Detected':
-                    w_guess = vertcat(w_opt[nxuk:nw_c],us_prev,xs_prev,xs_prev,xs_prev)
+                if solver.stats()['return_status'] != 'Infeasible_Problem_Detected':    
+                    w_guess = vertcat(w_opt[nxuk:nw_c-ns],xs_prev,xs_prev,us_prev,xs_prev,w_opt[nw_c-ns:nw_c])
             else:
                 if solver.stats()['return_status'] != 'Infeasible_Problem_Detected':
-                    w_guess = vertcat(w_opt[nxu:nw],us_prev,xs_prev)
+                    w_guess = vertcat(w_opt[nxu:nw-ns],us_prev,xs_prev,w_opt[nw-ns:nw])
    
             
         ## Set parameter for dynamic optimisation
@@ -760,18 +789,26 @@ for ksim in range(Nsim):
 
             ## Get the optimal input and  the Next predicted state (already including the disturbance estimate) i.e.x(k|k-1)
             if Collocation == True:
-                u_k = w_opt[nxuk-nu:nxuk]
-                 
+                u_k = w_opt[nxuk-nu:nxuk]             
                 s1_k = w_opt[nxuk-nu-2*nx:nxuk-nu-nx]
-                s2_k = w_opt[nxuk-nu-nx:nxuk-nu]
+                s2_k = w_opt[nxuk-nu-nx:nxuk-nu]              
+                xhat_k = w_opt[nxuk:nxuk+nx]             
+                sl_k = w_opt[nw_c-ns:nw_c]
             else:
                 u_k = w_opt[nxu-nu:nxu]
-                # xhat_k = w_opt[nxu:nxu+nx] 
+                xhat_k = w_opt[nxu:nxu+nx]
+                sl_k = w_opt[nw-ns:nw]
+                
+        # Next predicted state (already including the disturbance estimate) 
+        # i.e.x(k|k-1)        
+        elif solver.stats()['return_status'] == 'Infeasible_Problem_Detected':
+             xhat_k = Fx_model(xhat_k, u_k, h, dhat_k, t_k, p_x_k)
 
         U.append(u_k)
+        if slacks == True:
+            Sl.append(sl_k)
         TIME_DYN.append(etime)
-        
-        
+       
     ############### Updating variables xp and xhat ###########################
     if Fp_nominal is True:
         x_k = Fx_p(x_k, u_k, h, dhat_k, t_k, p_xmp)
@@ -788,16 +825,6 @@ for ksim in range(Nsim):
         Qw = scla.sqrtm(Q_wn)
         w_wn_k = mtimes(Qw,DM(np.random.normal(0,1,nxp)))    
         x_k = x_k + mtimes(G_wn,w_wn_k)
-    
-    # Next predicted state (already including the disturbance estimate) 
-    # i.e.x(k|k-1)
-    if solver.stats()['return_status'] == 'Infeasible_Problem_Detected':
-        xhat_k = Fx_model(xhat_k, u_k, h, dhat_k, t_k, p_x_k)
-    else:
-        if 'Collocation' == True:
-            xhat_k = w_opt[nxuk:nxuk+nx]
-        else:
-            xhat_k = w_opt[nxu:nxu+nx]
     
     if estimating is False: 
         
@@ -854,6 +881,7 @@ Y_HAT = vertcat(*Y_HAT)
 D_HAT = vertcat(*D_HAT)
 P_K = vertcat(*P_K)
 X_KF = vertcat(*X_KF)
+Sl = vertcat(*Sl)
 if estimating is False: 
     U = vertcat(*U)
     XS = vertcat(*XS)
@@ -891,7 +919,7 @@ else:
         [Upopt,_, _] = makeplot(tsim,Upopt,'Optimal flow ',pf,  pltopt = 'steps')
         [COR, _, _] = makeplot(tsim,COR,'Correction on Output ',pf)  
     [X_HAT, XS, _] = makeplot(tsim,X_HAT,'State ',pf, XS) 
-    [Xp, _, _] = makeplot(tsim,Xp,'Process State ',pf) 
+    # [Xp, _, _] = makeplot(tsim,Xp,'Process State ',pf) 
     [U, US, _] = makeplot(tsim,U,'Input ',pf, US, pltopt = 'steps')
     if 'defSP' in locals():
         Ysp = vertcat(*Ysp)

@@ -82,23 +82,23 @@ def opt_ss(n, m, p, nd, npx, npy, Fx_model,Fy_model,Fss_obj,QForm_ss,DUssForm, s
     
     # initialization of parameters as symbolic variables
     xSX = SX.sym("xSX", n); uSX = SX.sym("uSX", m); dSX = SX.sym("dSX", nd)
-    tSX = SX.sym("tSX", 1); pxSX = SX.sym("pxSX", npx)
+    tSX = SX.sym("tSX", 1); pxSX = SX.sym("pxSX", npx); pySX = SX.sym("pySX",npy); ySX = SX.sym("ySX", p)
     
     if G_ineq_SS != None:
-        g_ineq_SS = G_ineq_SS(xSX,uSX,dSX,tSX,pxSX)
-        G_ineqSS_SX = Function('G_ineqSS_SX', [xSX,uSX,dSX,tSX,pxSX], [g_ineq_SS])
+        g_ineq_SS = G_ineq_SS(xSX,uSX,ySX,dSX,tSX,pxSX, pySX)
+        G_ineqSS_SX = Function('G_ineqSS_SX', [xSX,uSX,ySX,dSX,tSX,pxSX,pySX], [g_ineq_SS])
         
     if H_eq_SS != None:
-        h_eq_SS = H_eq_SS(xSX,uSX,dSX,tSX,pxSX)
-        H_eqSS_SX = Function('H_eqSS_SX', [xSX,uSX,dSX,tSX,pxSX], [h_eq_SS])
+        h_eq_SS = H_eq_SS(xSX,uSX,ySX,dSX,tSX,pxSX,pySX)
+        H_eqSS_SX = Function('H_eqSS_SX', [xSX,uSX,ySX,dSX,tSX,pxSX,pySX], [h_eq_SS])
     
     if G_ineq_SS != None:
-        G_ss = G_ineq_SS(Xs, Us, d, t, py)
+        G_ss = G_ineqSS_SX(Xs, Us, Ys, d, t, px, py)
     else:
         G_ss = []
         
     if H_eq_SS != None:
-        H_ss = H_eq_SS(Xs, Us, d, t, py)
+        H_ss = H_eqSS_SX(Xs, Us, Ys, d, t, px, py)
     else:
         H_ss = []
     

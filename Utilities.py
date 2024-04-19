@@ -491,7 +491,7 @@ def makeplot(tsim,X1,label,pf,*var,**kwargs):
                      
         plt.grid(True)
        
-        plt.savefig(pf + label + str(k+1) + '.pdf', format = 'pdf', transparent = True, bbox_inches = 'tight' )
+        # plt.savefig(pf + label + str(k+1) + '.pdf', format = 'pdf', transparent = True, bbox_inches = 'tight' )
         
     return [Xout1, Xout2, Xout3]
 
