@@ -83,7 +83,7 @@ s_Coll = SX.sym('s_Coll',2*nx) #internal states for collocation method
 
 if ssjacid is True:
     from SS_JAC_ID import *
-    [A, B, C, xlin, ulin, ylin] = ss_p_jac_id(ex_name, nx, nu, ny, nd, k, t)
+    [A, B, C, D, xlin, ulin, ylin] = ss_p_jac_id(ex_name, nx, nu, ny, nd, npx, npy, k, t, px, py, LinPar)
     # Build linearized model.
     if offree == "lin":
         [Fx_model,Fy_model] = defF_model(x,u,y,d,k,t,px,py,offree,LinPar, Bd = Bd, Cd = Cd, A = A, B = B, C = C, xlin = xlin, ulin = ulin, ylin = ylin)

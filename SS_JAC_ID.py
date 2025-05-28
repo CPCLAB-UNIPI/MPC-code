@@ -11,9 +11,10 @@ from casadi.tools import *
 import math
 from Utilities import*
     
-def ss_p_jac_id(ex_name, nx, nu, ny, nd, k, t):
+def ss_p_jac_id(ex_name, nx, nu, ny, nd, npx, npy, k, t, px, py, LinPar):
     
     import ex_name as en
+    import Default_Values as DV
 
     # setting the offree value momentaneusly to no when disturbance model is linear
     if hasattr(en, 'offree'):
@@ -25,32 +26,49 @@ def ss_p_jac_id(ex_name, nx, nu, ny, nd, k, t):
     if hasattr(en, 'User_fxm_Cont'):
         if hasattr(en, 'StateFeedback'):
             if en.StateFeedback is True:
-                [Fx_model,Fy_model] = defF_model(en.x,en.u,en.y,en.d,k,t,NOLINoffree, fx = en.User_fxm_Cont, Mx = en.Mx, SF = en.StateFeedback)
+                [Fx_model,Fy_model] = defF_model(en.x,en.u,en.y,en.d,k,t,px,py,NOLINoffree,LinPar, fx = en.User_fxm_Cont, Mx = en.Mx, SF = en.StateFeedback)
         else:
             if hasattr(en, 'User_fym'):
-                [Fx_model,Fy_model] = defF_model(en.x,en.u,en.y,en.d,k,t,NOLINoffree, fx = en.User_fxm_Cont, Mx = en.Mx, fy = en.User_fym)
+                [Fx_model,Fy_model] = defF_model(en.x,en.u,en.y,en.d,k,t,px,py,NOLINoffree,LinPar, fx = en.User_fxm_Cont, Mx = en.Mx, fy = en.User_fym)
             else:
-                [Fx_model,Fy_model] = defF_model(en.x,en.u,en.y,en.d,k,t,NOLINoffree, fx = en.User_fxm_Cont, Mx = en.Mx, C = en.C)
+                [Fx_model,Fy_model] = defF_model(en.x,en.u,en.y,en.d,k,t,px,py,NOLINoffree,LinPar, fx = en.User_fxm_Cont, Mx = en.Mx, C = en.C)
     elif hasattr(en, 'User_fxm_Dis'):
         if hasattr(en, 'StateFeedback'):
             if en.StateFeedback is True:
-                [Fx_model,Fy_model] = defF_model(en.x,en.u,en.y,en.d,k,t,NOLINoffree, Fx = en.User_fxm_Dis, SF = en.StateFeedback)
+                [Fx_model,Fy_model] = defF_model(en.x,en.u,en.y,en.d,k,t,px,py,NOLINoffree,LinPar, Fx = en.User_fxm_Dis, SF = en.StateFeedback)
         else:
             if hasattr(en, 'User_fym'):
-                [Fx_model,Fy_model] = defF_model(en.x,en.u,en.y,en.d,k,t,NOLINoffree, Fx = en.User_fxm_Dis, fy = en.User_fym)
+                [Fx_model,Fy_model] = defF_model(en.x,en.u,en.y,en.d,k,t,px,py,NOLINoffree,LinPar, Fx = en.User_fxm_Dis, fy = en.User_fym)
             else:
-                [Fx_model,Fy_model] = defF_model(en.x,en.u,en.y,en.d,k,t,NOLINoffree, Fx = en.User_fxm_Dis, C = en.C)
+                [Fx_model,Fy_model] = defF_model(en.x,en.u,en.y,en.d,k,t,px,py,NOLINoffree,LinPar, Fx = en.User_fxm_Dis, C = en.C)
     elif hasattr(en, 'A') and hasattr(en, 'User_fym'):
-            [Fx_model,Fy_model] = defF_model(en.x,en.u,en.y,en.d,k,t,NOLINoffree, A = en.A, B = en.B, fy = en.User_fym)                    
+            [Fx_model,Fy_model] = defF_model(en.x,en.u,en.y,en.d,k,t,px,py,NOLINoffree,LinPar, A = en.A, B = en.B, fy = en.User_fym)                    
     
-    (solver_ss, wss_lb, wss_ub, gss_lb, gss_ub) = opt_ss_id(nx, nu, ny, nd, Fx_model,Fy_model,umin = en.umin, umax = en.umax, w_s = None, z_s = None, ymin = en.ymin, ymax = en.ymax, xmin = en.xmin, xmax = en.xmax, h = en.h)
+    
+    def get_attr(attr_name, mod1, mod2):
+        if hasattr(mod1, attr_name):
+            return getattr(mod1, attr_name)
+        elif hasattr(mod2, attr_name):
+            return getattr(mod2, attr_name)
+        else:
+            raise AttributeError(f"Attribute '{attr_name}' is neither in '{mod1.__name__}' nor in '{mod2.__name__}'.")
+    
+    attr_list = ["umax", "umin", "ymax", "ymin", "xmax", "xmin"] 
+
+    ResultConstr = {attr: get_attr(attr, en, DV) for attr in attr_list}
+        
+    (solver_ss, wss_lb, wss_ub, gss_lb, gss_ub) = opt_ss_id(nx, nu, ny, nd, npx, npy, Fx_model,Fy_model, \
+                umin = ResultConstr["umin"], umax = ResultConstr["umax"], w_s = None, z_s = None, ymin = ResultConstr["ymin"], ymax = ResultConstr["ymax"], \
+                    xmin = ResultConstr["xmin"], xmax = ResultConstr["xmax"], h = en.h)
     
     # Set default values in ss point    
     d_0 = DM.zeros(nd,1)
     t_0 = 0.0 
+    p_xk0 = DM.zeros((npx,1)) #Dummy variable when parameter is not present
+    p_yk0 = DM.zeros((npy,1)) #Dummy variable when parameter is not present
     
     ## Paramenter for Target optimization
-    par_ss = vertcat(d_0,t_0)    
+    par_ss = vertcat(d_0,t_0, p_xk0, p_yk0)    
     
     # Define useful dimension
     nxu = nx + nu # state+control                     
@@ -60,7 +78,7 @@ def ss_p_jac_id(ex_name, nx, nu, ny, nd, k, t):
     wss_guess = DM.zeros(nxuy)
     wss_guess[0:nx] = en.x0_m
     wss_guess[nx:nxu] = en.u0
-    y0 = Fy_model(en.x0_m,en.u0,d_0,t_0)
+    y0 = Fy_model(en.x0_m,en.u0,d_0,t_0,p_yk0)
     wss_guess[nxu:nxuy] = y0
     
 #    start_time = time.time()    
@@ -81,29 +99,29 @@ def ss_p_jac_id(ex_name, nx, nu, ny, nd, k, t):
     # get linearization of states
     Fun_in = SX.get_input(Fx_model)
     A_dm = jacobian(Fx_model.call(Fun_in)[0],Fun_in[0])
-    A = Function('A', [Fun_in[0],Fun_in[1],Fun_in[2],Fun_in[3],Fun_in[4]], [A_dm])
+    A = Function('A', [Fun_in[0],Fun_in[1],Fun_in[2],Fun_in[3],Fun_in[4],Fun_in[5]], [A_dm])
     
     B_dm = jacobian(Fx_model.call(Fun_in)[0],Fun_in[1])
-    B = Function('B', [Fun_in[0],Fun_in[1],Fun_in[2],Fun_in[3],Fun_in[4]], [B_dm])
+    B = Function('B', [Fun_in[0],Fun_in[1],Fun_in[2],Fun_in[3],Fun_in[4],Fun_in[5]], [B_dm])
     
     # get linearization of measurements
     Fun_in = SX.get_input(Fy_model)
     C_dm = jacobian(Fy_model.call(Fun_in)[0], Fun_in[0])
-    C = Function('C', [Fun_in[0],Fun_in[1],Fun_in[2],Fun_in[3]], [C_dm])
+    C = Function('C', [Fun_in[0],Fun_in[1],Fun_in[2],Fun_in[3],Fun_in[4]], [C_dm])
     
     D_dm = jacobian(Fy_model.call(Fun_in)[0], Fun_in[1])
-    D = Function('D', [Fun_in[0],Fun_in[1],Fun_in[2],Fun_in[3]], [D_dm])
+    D = Function('D', [Fun_in[0],Fun_in[1],Fun_in[2],Fun_in[3],Fun_in[4]], [D_dm])
     
-    A_k = A(xlin,ulin,en.h,d_0,t_0).full()
-    B_k = B(xlin,ulin,en.h,d_0,t_0).full()
+    A_k = A(xlin,ulin,en.h,d_0,t_0,p_xk0).full()
+    B_k = B(xlin,ulin,en.h,d_0,t_0,p_xk0).full()
       
-    C_k = C(xlin,ulin,d_0,t_0).full()
-    D_k = D(xlin,ulin,d_0,t_0).full()
+    C_k = C(xlin,ulin,d_0,t_0,p_yk0).full()
+    D_k = D(xlin,ulin,d_0,t_0,p_yk0).full()
     
     return [A_k, B_k, C_k, D_k, xlin, ulin, ylin]
 
 
-def opt_ss_id(n, m, p, nd, Fx_model,Fy_model, umin = None, umax = None, w_s = None, z_s = None, ymin = None, ymax = None, xmin = None, xmax = None, h = None):
+def opt_ss_id(n, m, p, nd, npx, npy, Fx_model,Fy_model, umin = None, umax = None, w_s = None, z_s = None, ymin = None, ymax = None, xmin = None, xmax = None, h = None):
     """
     SUMMARY:
     It builds the steady-state hunt problem
@@ -124,10 +142,11 @@ def opt_ss_id(n, m, p, nd, Fx_model,Fy_model, umin = None, umax = None, w_s = No
     Ys = wss[nxu:nxuy]
     
     # Define parameters
-    par_ss = MX.sym("par_ss", nd+1)
+    par_ss = MX.sym("par_ss", nd+1+npx+npy)
     d = par_ss[:+nd]
     t = par_ss[nd:nd+1]
-    
+    px = par_ss[nd+1:nd+1+npx]
+    py = par_ss[nd+1+npx:nd+1+npx+npy]
 
     # Defining constraints
     if ymin is None:
@@ -147,12 +166,12 @@ def opt_ss_id(n, m, p, nd, Fx_model,Fy_model, umin = None, umax = None, w_s = No
         h = .1 #Defining integrating step if not provided from the user
     gss = []
         
-    Xs_next = Fx_model( Xs, Us, h, d, t)
+    Xs_next = Fx_model( Xs, Us, h, d, t, px)
      
     gss.append(Xs_next - Xs)
     gss = vertcat(*gss)
     
-    Ys_next = Fy_model( Xs, Us, d, t)
+    Ys_next = Fy_model( Xs, Us, d, t, py)
     gss = vertcat(gss , Ys_next- Ys)
     
     # Defining obj_fun
@@ -180,3 +199,5 @@ def opt_ss_id(n, m, p, nd, Fx_model,Fy_model, umin = None, umax = None, w_s = No
     solver_ss = nlpsol('solver','ipopt', nlp_ss)
 
     return [solver_ss, wss_lb, wss_ub, gss_lb, gss_ub]
+
+
